@@ -11,7 +11,7 @@ public class SkillRequest {
     private String providerId;
     private String skillId;
     private String message;
-    private String status = "PENDING"; // PENDING, ACCEPTED, REJECTED
+    private String status = "PENDING"; // PENDING, ACCEPTED, REJECTED CAN BE SHOWN
     private Instant createdAt;
     // getters/setters
 }
