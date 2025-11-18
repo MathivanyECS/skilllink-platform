@@ -1,21 +1,23 @@
 package com.university.skilllink.model;
 
-import lombok.Data;
+import lombok.*;
+import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
-import java.time.Instant;
 
-@Data
-@Document("skillRequests")
+import java.time.LocalDateTime;
+
+@Data @Builder @NoArgsConstructor @AllArgsConstructor
+@Document(collection = "skill_requests")
 public class SkillRequest {
     @Id private String id;
-    private String requesterId;
-    private String providerUserId;
-    private String profileId;   // optional pointer to profile
-    private String skillName;
-    private String message;
-    private Status status = Status.PENDING;
-    private Instant createdAt = Instant.now();
+    private String seekerId;     // user id who requests
+    private String providerId;   // user id who will teach
+    private String skillName;    // skill name or skillId (string)
+    private String note;
+    private RequestStatus status; // PENDING, ACCEPTED, REJECTED, COMPLETED
+    @CreatedDate private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 
-    public enum Status { PENDING, ACCEPTED, REJECTED }
+    public enum RequestStatus { PENDING, ACCEPTED, REJECTED, COMPLETED }
 }

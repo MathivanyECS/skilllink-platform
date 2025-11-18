@@ -225,6 +225,8 @@ public class ProfileServiceImpl implements ProfileService {
             profile.setSocialLinks(socialLinks);
         }
 
+        
+
         // Save updated profile
         Profile updatedProfile = profileRepository.save(profile);
         log.info("Profile updated successfully for user ID: {}", userId);

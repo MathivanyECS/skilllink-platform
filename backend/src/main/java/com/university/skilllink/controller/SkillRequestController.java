@@ -1,73 +1,57 @@
 package com.university.skilllink.controller;
 
-import com.university.skilllink.model.Notification;
+import com.university.skilllink.dto.Request.RequestDTO; // create simple DTOs
 import com.university.skilllink.model.SkillRequest;
-import com.university.skilllink.repository.NotificationRepository;
-import com.university.skilllink.repository.SkillRequestRepository;
+import com.university.skilllink.service.RequestService;
+import com.university.skilllink.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.Instant;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/skill-requests")
+@RequestMapping("/api/requests")
 @RequiredArgsConstructor
+@CrossOrigin(origins = {"http://localhost:3000","http://localhost:5173"})
 public class SkillRequestController {
 
-    private final SkillRequestRepository reqRepo;
-    private final NotificationRepository notifRepo;
+    private final RequestService requestService;
+    private final UserService userService;
 
     @PostMapping
-    public ResponseEntity<SkillRequest> create(@RequestBody SkillRequest r){
-        r.setCreatedAt(Instant.now());
-        r.setStatus(SkillRequest.Status.PENDING);
-        SkillRequest saved = reqRepo.save(r);
+    public ResponseEntity<SkillRequest> sendRequest(@RequestBody RequestDTO dto, Authentication auth) {
+        String seekerEmail = auth.getName();
+        String seekerId = userService.getUserByEmail(seekerEmail).getId();
 
-        // notify provider
-        Notification n = new Notification();
-        n.setUserId(saved.getProviderUserId());
-        n.setTitle("New skill request");
-        n.setBody("You have a new request for " + saved.getSkillName());
-        n.setCreatedAt(Instant.now());
-        notifRepo.save(n);
-
-        return ResponseEntity.status(201).body(saved);
+        SkillRequest req = requestService.sendRequest(seekerId, dto.getProviderId(), dto.getSkillName(), dto.getNote());
+        return ResponseEntity.status(201).body(req);
     }
 
-    @GetMapping("/incoming/{providerUserId}")
-    public ResponseEntity<List<SkillRequest>> incoming(@PathVariable String providerUserId){
-        return ResponseEntity.ok(reqRepo.findByProviderUserId(providerUserId));
+    @GetMapping("/incoming")
+    public ResponseEntity<List<SkillRequest>> incoming(Authentication auth) {
+        String email = auth.getName();
+        String userId = userService.getUserByEmail(email).getId();
+        return ResponseEntity.ok(requestService.getIncomingRequests(userId));
     }
 
-    @PutMapping("/{id}/accept")
-    public ResponseEntity<SkillRequest> accept(@PathVariable String id){
-        SkillRequest r = reqRepo.findById(id).orElseThrow();
-        r.setStatus(SkillRequest.Status.ACCEPTED);
-        SkillRequest saved = reqRepo.save(r);
-        // notify requester
-        Notification n = new Notification();
-        n.setUserId(saved.getRequesterId());
-        n.setTitle("Request accepted");
-        n.setBody("Your skill request was accepted. A session board will be created by the system.");
-        n.setCreatedAt(Instant.now());
-        notifRepo.save(n);
-        return ResponseEntity.ok(saved);
+    @GetMapping("/sent")
+    public ResponseEntity<List<SkillRequest>> sent(Authentication auth) {
+        String email = auth.getName();
+        String userId = userService.getUserByEmail(email).getId();
+        return ResponseEntity.ok(requestService.getSentRequests(userId));
     }
 
-    @PutMapping("/{id}/reject")
-    public ResponseEntity<SkillRequest> reject(@PathVariable String id){
-        SkillRequest r = reqRepo.findById(id).orElseThrow();
-        r.setStatus(SkillRequest.Status.REJECTED);
-        SkillRequest saved = reqRepo.save(r);
-        // notify requester
-        Notification n = new Notification();
-        n.setUserId(saved.getRequesterId());
-        n.setTitle("Request rejected");
-        n.setBody("Your skill request was rejected.");
-        n.setCreatedAt(Instant.now());
-        notifRepo.save(n);
-        return ResponseEntity.ok(saved);
+    @PutMapping("/{requestId}/status")
+    public ResponseEntity<SkillRequest> updateStatus(
+            @PathVariable String requestId,
+            @RequestParam("status") String status,
+            Authentication auth
+    ) {
+        String email = auth.getName();
+        String actorId = userService.getUserByEmail(email).getId();
+        SkillRequest updated = requestService.updateStatus(requestId, actorId, status);
+        return ResponseEntity.ok(updated);
     }
 }
