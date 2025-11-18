@@ -1,6 +1,7 @@
 package com.university.skilllink.controller;
 
 import com.university.skilllink.dto.auth.*;
+import com.university.skilllink.exception.CustomExceptions.UserNotFoundException;
 import com.university.skilllink.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
