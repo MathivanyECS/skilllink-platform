@@ -43,4 +43,15 @@ public class CustomExceptions {
             super(message);
         }
     }
+    public static class ProfileAlreadyExistsException extends RuntimeException {
+    public ProfileAlreadyExistsException(String message) {
+        super(message);
+    }
+}
+
+public static class ProfileNotFoundException extends RuntimeException {
+    public ProfileNotFoundException(String message) {
+        super(message);
+    }
+}
 }
