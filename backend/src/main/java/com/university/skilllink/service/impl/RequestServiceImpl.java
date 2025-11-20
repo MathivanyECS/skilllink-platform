@@ -2,7 +2,6 @@ package com.university.skilllink.service.impl;
 
 import com.university.skilllink.exception.ForbiddenException;
 import com.university.skilllink.exception.ResourceNotFoundException;
-import com.university.skilllink.model.Notification;
 import com.university.skilllink.model.SkillRequest;
 import com.university.skilllink.model.User;
 import com.university.skilllink.repository.SkillRequestRepository;
@@ -13,7 +12,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -38,8 +39,18 @@ public class RequestServiceImpl implements RequestService {
         SkillRequest saved = requestRepository.save(req);
 
         String seekerName = userRepository.findById(seekerId).map(User::getFullName).orElse("Someone");
-        String content = String.format("%s requested to learn %s from you.", seekerName, skillName);
-        notificationService.send(providerId, Notification.NotificationType.NEW_REQUEST, content, "/requests/" + saved.getId());
+        String title = "New learning request";
+        String message = String.format("%s requested to learn %s from you.", seekerName, skillName);
+
+        // metadata: include request id and link path
+        Map<String, String> meta = new HashMap<>();
+        meta.put("requestId", saved.getId());
+        meta.put("url", "/requests/" + saved.getId());
+        meta.put("skillName", skillName);
+        meta.put("seekerId", seekerId);
+
+        // Use sendToUser so it's explicit and carries metadata
+        notificationService.sendToUser(providerId, "NEW_REQUEST", title, message, meta);
 
         return saved;
     }
@@ -86,21 +97,46 @@ public class RequestServiceImpl implements RequestService {
 
         switch (status) {
             case ACCEPTED -> {
-                String content = String.format("%s accepted your request to learn %s.", actorName, req.getSkillName());
-                notificationService.send(req.getSeekerId(), Notification.NotificationType.ACCEPTED, content, "/sessions/" + saved.getId());
+                String title = "Request accepted";
+                String message = String.format("%s accepted your request to learn %s.", actorName, req.getSkillName());
+                Map<String, String> meta = new HashMap<>();
+                meta.put("requestId", saved.getId());
+                meta.put("url", "/sessions/" + saved.getId());
+                meta.put("providerId", req.getProviderId());
+                meta.put("skillName", req.getSkillName());
+
+                // notify seeker
+                notificationService.sendToUser(req.getSeekerId(), "REQUEST_ACCEPTED", title, message, meta);
             }
             case REJECTED -> {
-                String content = String.format("%s rejected your request to learn %s.", actorName, req.getSkillName());
-                notificationService.send(req.getSeekerId(), Notification.NotificationType.REJECTED, content, null);
+                String title = "Request rejected";
+                String message = String.format("%s rejected your request to learn %s.", actorName, req.getSkillName());
+                Map<String, String> meta = new HashMap<>();
+                meta.put("requestId", saved.getId());
+                meta.put("skillName", req.getSkillName());
+                meta.put("providerId", req.getProviderId());
+
+                notificationService.sendToUser(req.getSeekerId(), "REQUEST_REJECTED", title, message, meta);
             }
             case COMPLETED -> {
-                String content = String.format("Session for %s was marked completed by %s.", req.getSkillName(), actorName);
-                notificationService.send(req.getSeekerId(), Notification.NotificationType.MESSAGE, content, "/sessions/" + saved.getId());
-                notificationService.send(req.getProviderId(), Notification.NotificationType.MESSAGE, content, "/sessions/" + saved.getId());
+                String title = "Session completed";
+                String message = String.format("Session for %s was marked completed by %s.", req.getSkillName(), actorName);
+                Map<String, String> meta = new HashMap<>();
+                meta.put("requestId", saved.getId());
+                meta.put("url", "/sessions/" + saved.getId());
+                meta.put("skillName", req.getSkillName());
+
+                notificationService.sendToUser(req.getSeekerId(), "SESSION_COMPLETED", title, message, meta);
+                notificationService.sendToUser(req.getProviderId(), "SESSION_COMPLETED", title, message, meta);
             }
             default -> {
-                String content = String.format("Request for %s updated to %s.", req.getSkillName(), status);
-                notificationService.send(req.getSeekerId(), Notification.NotificationType.MESSAGE, content, null);
+                String title = "Request updated";
+                String message = String.format("Request for %s updated to %s.", req.getSkillName(), status);
+                Map<String, String> meta = new HashMap<>();
+                meta.put("requestId", saved.getId());
+                meta.put("skillName", req.getSkillName());
+
+                notificationService.sendToUser(req.getSeekerId(), "REQUEST_UPDATED", title, message, meta);
             }
         }
 
