@@ -10,12 +10,16 @@ import com.university.skilllink.model.User;
 import com.university.skilllink.repository.ProfileRepository;
 import com.university.skilllink.repository.UserRepository;
 import com.university.skilllink.service.ProfileService;
+import com.university.skilllink.service.WishlistService;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -25,6 +29,8 @@ public class ProfileServiceImpl implements ProfileService {
 
     private final ProfileRepository profileRepository;
     private final UserRepository userRepository;
+    private final WishlistService wishlistService; // add this to constructor via @RequiredArgsConstructor
+
 
     @Override
     @Transactional
@@ -197,59 +203,87 @@ public List<ProfileDTO> getProfilesBySkill(String skillName) {
     }
 
     @Override
-    @Transactional
-    public ProfileDTO updateProfile(String userId, CreateProfileRequest request) {
-        log.info("Updating profile for user ID: {}", userId);
+@Transactional
+public ProfileDTO updateProfile(String userId, CreateProfileRequest request) {
+    log.info("Updating profile for user ID: {}", userId);
 
-        // Find existing profile
-        Profile profile = profileRepository.findByUserId(userId)
-                .orElseThrow(() -> {
-                    log.error("Profile not found for user ID: {}", userId);
-                    return new ProfileNotFoundException("Profile not found for user ID: " + userId);
-                });
+    // Find existing profile
+    Profile profile = profileRepository.findByUserId(userId)
+            .orElseThrow(() -> {
+                log.error("Profile not found for user ID: {}", userId);
+                return new ProfileNotFoundException("Profile not found for user ID: " + userId);
+            });
 
-        // Update basic fields
-        profile.setProfilePicture(request.getProfilePicture());
-        profile.setDepartment(request.getDepartment());
-        profile.setYearOfStudy(request.getYearOfStudy());
-        profile.setBio(request.getBio());
-        profile.setPhoneNumber(request.getPhoneNumber());
+    // Compute currently taught skill names
+    List<String> oldSkills = profile.getSkillsToTeach() == null
+            ? List.of()
+            : profile.getSkillsToTeach().stream()
+            .map(Profile.SkillToTeach::getSkillName)
+            .map(s -> s == null ? "" : s.trim())
+            .filter(s -> !s.isEmpty())
+            .collect(Collectors.toList());
 
-        // Update skills to teach
-        List<Profile.SkillToTeach> skillsToTeach = request.getSkillsToTeach().stream()
-                .map(dto -> Profile.SkillToTeach.builder()
-                        .skillName(dto.getSkillName())
-                        .proficiency(dto.getProficiency())
-                        .yearsOfExperience(dto.getYearsOfExperience())
-                        .build())
-                .collect(Collectors.toList());
-        profile.setSkillsToTeach(skillsToTeach);
+    // Update basic fields
+    profile.setProfilePicture(request.getProfilePicture());
+    profile.setDepartment(request.getDepartment());
+    profile.setYearOfStudy(request.getYearOfStudy());
+    profile.setBio(request.getBio());
+    profile.setPhoneNumber(request.getPhoneNumber());
 
-        // Update skills to learn
-        profile.setSkillsToLearn(request.getSkillsToLearn());
+    // Update skills to teach
+    List<Profile.SkillToTeach> skillsToTeach = request.getSkillsToTeach().stream()
+            .map(dto -> Profile.SkillToTeach.builder()
+                    .skillName(dto.getSkillName())
+                    .proficiency(dto.getProficiency())
+                    .yearsOfExperience(dto.getYearsOfExperience())
+                    .build())
+            .collect(Collectors.toList());
+    profile.setSkillsToTeach(skillsToTeach);
 
-        // Update social links
-        if (request.getSocialLinks() != null) {
-            Profile.SocialLinks socialLinks = Profile.SocialLinks.builder()
-                    .linkedin(request.getSocialLinks().getLinkedin())
-                    .github(request.getSocialLinks().getGithub())
-                    .portfolio(request.getSocialLinks().getPortfolio())
-                    .build();
-            profile.setSocialLinks(socialLinks);
-        }
+    // Compute newly added skills
+    List<String> newSkills = skillsToTeach.stream()
+            .map(Profile.SkillToTeach::getSkillName)
+            .map(s -> s == null ? "" : s.trim())
+            .filter(s -> !s.isEmpty())
+            .collect(Collectors.toList());
 
-        
+    Set<String> addedSkills = new HashSet<>(newSkills);
+    addedSkills.removeAll(oldSkills); // only keep newly added
 
-        // Save updated profile
-        Profile updatedProfile = profileRepository.save(profile);
-        log.info("Profile updated successfully for user ID: {}", userId);
+    // Update skills to learn
+    profile.setSkillsToLearn(request.getSkillsToLearn());
 
-        // Get user info
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException("User not found"));
-
-        return ProfileDTO.fromProfile(updatedProfile, user.getFullName(), user.getEmail());
+    // Update social links
+    if (request.getSocialLinks() != null) {
+        Profile.SocialLinks socialLinks = Profile.SocialLinks.builder()
+                .linkedin(request.getSocialLinks().getLinkedin())
+                .github(request.getSocialLinks().getGithub())
+                .portfolio(request.getSocialLinks().getPortfolio())
+                .build();
+        profile.setSocialLinks(socialLinks);
     }
+
+    // Save updated profile
+    Profile updatedProfile = profileRepository.save(profile);
+    log.info("Profile updated successfully for user ID: {}", userId);
+
+    // If provider added new skills, notify wishlist requesters for those skills
+    if (!addedSkills.isEmpty()) {
+        for (String skill : addedSkills) {
+            try {
+                wishlistService.notifyWhenProviderAdded(skill, userId);
+            } catch (Exception ex) {
+                log.error("Failed to notify wishlist requesters for skill {} by provider {}", skill, userId, ex);
+            }
+        }
+    }
+
+    // Get user info
+    User user = userRepository.findById(userId)
+            .orElseThrow(() -> new UserNotFoundException("User not found"));
+
+    return ProfileDTO.fromProfile(updatedProfile, user.getFullName(), user.getEmail());
+}
 
     @Override
     @Transactional
