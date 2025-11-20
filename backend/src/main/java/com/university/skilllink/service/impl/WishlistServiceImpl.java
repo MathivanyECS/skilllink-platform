@@ -1,18 +1,14 @@
 package com.university.skilllink.service.impl;
 
-import com.university.skilllink.model.Notification;
 import com.university.skilllink.model.SkillWishlist;
 import com.university.skilllink.repository.SkillWishlistRepository;
 import com.university.skilllink.service.NotificationService;
 import com.university.skilllink.service.WishlistService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -22,61 +18,73 @@ public class WishlistServiceImpl implements WishlistService {
     private final NotificationService notificationService;
 
     @Override
-    public SkillWishlist addToWishlist(String userId, String skillName) {
-        Optional<SkillWishlist> opt = wishlistRepository.findBySkillNameIgnoreCase(skillName);
-        SkillWishlist w;
+    @Transactional
+    public void addWishlist(String requesterUserId, String skillName) {
+        String normalized = skillName.trim();
+        Optional<SkillWishlist> opt = wishlistRepository.findBySkillNameIgnoreCase(normalized);
+
+        SkillWishlist wishlist;
+        boolean isNew = false;
         if (opt.isPresent()) {
-            w = opt.get();
-            Set<String> users = w.getRequestedBy() == null ? new HashSet<>() : new HashSet<>(w.getRequestedBy());
-            if (!users.contains(userId)) {
-                users.add(userId);
-                w.setRequestedBy(users);
-                w.setRequestCount(users.size());
-                w = wishlistRepository.save(w);
+            wishlist = opt.get();
+            Set<String> requesters = wishlist.getRequestedBy();
+            if (requesters == null) requesters = new HashSet<>();
+            if (!requesters.contains(requesterUserId)) {
+                requesters.add(requesterUserId);
+                wishlist.setRequestedBy(requesters);
+                wishlist.setRequestCount(requesters.size());
+                wishlist = wishlistRepository.save(wishlist);
+            } else {
+                // already requested by this user — ignore duplicate
             }
         } else {
-            Set<String> users = new HashSet<>();
-            users.add(userId);
-            w = SkillWishlist.builder()
-                    .skillName(skillName)
-                    .requestedBy(users)
+            wishlist = SkillWishlist.builder()
+                    .skillName(normalized)
+                    .requestedBy(new HashSet<>(Collections.singletonList(requesterUserId)))
                     .requestCount(1)
-                    .createdAt(LocalDateTime.now())
                     .build();
-            w = wishlistRepository.save(w);
+            wishlist = wishlistRepository.save(wishlist);
+            isNew = true;
         }
-        return w;
+
+        // Notify users about a new wanted skill (skill wishlist)
+        // send a general notification to everyone that a wishlist was created (type: WISHLIST_CREATED)
+        Map<String, String> meta = new HashMap<>();
+        meta.put("skillName", wishlist.getSkillName());
+        meta.put("requesterId", requesterUserId);
+
+        String title = "Skill wanted: " + wishlist.getSkillName();
+        String message;
+        if (isNew) {
+            message = "Someone wants to learn " + wishlist.getSkillName() + ". If you can teach, please add it to your profile.";
+        } else {
+            message = "More people want to learn " + wishlist.getSkillName() + ".";
+        }
+
+        notificationService.sendToAllUsers("WISHLIST_CREATED", title, message, meta);
     }
 
     @Override
-    public List<SkillWishlist> getAll() {
-        return wishlistRepository.findAll();
-    }
-
-    @Override
-    public List<SkillWishlist> getTop() {
-        return wishlistRepository.findAllByOrderByRequestCountDesc();
-    }
-
-    /**
-     * Called by ProfileServiceImpl after a provider adds a skill to their profile.
-     * Notify all users who requested that skill.
-     */
-    @Override
-    public void notifyWhenProviderAdded(String skillName, String providerUserId) {
+    public void notifyWhenProviderAdded(String skillName, String providerId) {
         Optional<SkillWishlist> opt = wishlistRepository.findBySkillNameIgnoreCase(skillName);
-        if (opt.isEmpty()) return;
+        if (!opt.isPresent()) return;
 
-        SkillWishlist w = opt.get();
-        Set<String> users = w.getRequestedBy();
-        if (users == null || users.isEmpty()) return;
+        SkillWishlist wishlist = opt.get();
+        Set<String> requesters = wishlist.getRequestedBy();
+        if (requesters == null || requesters.isEmpty()) return;
 
-        // notify each requester
-        String content = String.format("A provider started offering %s. Check their profile.", skillName);
-        for (String requesterId : users) {
-            notificationService.send(requesterId, Notification.NotificationType.WISHLIST_AVAILABLE, content, "/profiles/" + providerUserId);
+        Map<String,String> meta = new HashMap<>();
+        meta.put("skillName", skillName);
+        meta.put("providerId", providerId);
+
+        String title = "Skill available: " + skillName;
+        String message = "A provider just added " + skillName + " — you requested this skill. Please contact the provider or send a request.";
+
+        // Notify each requester individually
+        for (String userId : requesters) {
+            notificationService.sendToUser(userId, "WISHLIST_AVAILABLE", title, message, meta);
         }
 
-        // Optionally: clear the wishlist entry or keep it (we'll keep it and leave requestCount intact)
+        // Optionally: remove the wishlist or keep it (we keep it so others still see demand).
     }
 }
