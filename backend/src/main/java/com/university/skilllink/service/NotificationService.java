@@ -3,11 +3,10 @@ package com.university.skilllink.service;
 import com.university.skilllink.model.Notification;
 
 import java.util.List;
+import java.util.Map;
 
 public interface NotificationService {
-    Notification send(String receiverId, Notification.NotificationType type, String content, String link);
-    List<Notification> getNotifications(String receiverId);
-    void markAsRead(String notificationId);
-    void markAllAsRead(String receiverId);
-    long countUnread(String receiverId);
+    Notification sendToUser(String userId, String type, String title, String message, Map<String,String> metadata);
+    void sendToAllUsers(String type, String title, String message, Map<String,String> metadata);
+    List<Notification> getNotificationsForUser(String userId);
 }
