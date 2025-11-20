@@ -1,4 +1,6 @@
 package com.university.skilllink.service.impl;
+import java.util.regex.Pattern; // if not already present at top of file
+
 
 import com.university.skilllink.dto.profile.CreateProfileRequest;
 import com.university.skilllink.dto.profile.ProfileDTO;
@@ -145,24 +147,35 @@ public class ProfileServiceImpl implements ProfileService {
                 .collect(Collectors.toList());
     }
 
-    @Override
-    public List<ProfileDTO> getProfilesBySkill(String skillName) {
-        log.info("Fetching profiles by skill: {}", skillName);
 
-        List<Profile> profiles = profileRepository.findBySkillsToTeachSkillName(skillName);
-        log.info("Found {} profiles teaching skill: {}", profiles.size(), skillName);
+@Override
+public List<ProfileDTO> getProfilesBySkill(String skillName) {
+    log.info("Fetching profiles by skill (starts-with, case-insensitive): {}", skillName);
 
-        return profiles.stream()
-                .map(profile -> {
-                    User user = userRepository.findById(profile.getUserId()).orElse(null);
-                    if (user != null && user.getIsActive()) {
-                        return ProfileDTO.fromProfile(profile, user.getFullName(), user.getEmail());
-                    }
-                    return null;
-                })
-                .filter(dto -> dto != null)
-                .collect(Collectors.toList());
+    if (skillName == null || skillName.trim().isEmpty()) {
+        // If no search term provided, return all profiles (keeps previous behavior)
+        return getAllProfiles();
     }
+
+    // Build a regex anchored to the start of the string to implement "starts-with"
+    // Example: "El" -> "^El" ; Pattern.quote prevents regex metacharacters in input
+    String sanitized = skillName.trim();
+    String regex = "^" + Pattern.quote(sanitized);
+
+    List<Profile> profiles = profileRepository.findBySkillsToTeachSkillNameRegex(regex);
+    log.info("Found {} profiles teaching skills starting with '{}'", profiles.size(), sanitized);
+
+    return profiles.stream()
+            .map(profile -> {
+                User user = userRepository.findById(profile.getUserId()).orElse(null);
+                if (user != null && user.getIsActive()) {
+                    return ProfileDTO.fromProfile(profile, user.getFullName(), user.getEmail());
+                }
+                return null;
+            })
+            .filter(dto -> dto != null)
+            .collect(Collectors.toList());
+}
 
     @Override
     public List<ProfileDTO> getProfilesByDepartmentAndYear(String department, Integer yearOfStudy) {
