@@ -80,11 +80,10 @@ public class ProfileController {
     }
 
     /**
-     * Filter profiles by department and year
+     * Filter profiles by year
      */
     @GetMapping("/filter")
     public ResponseEntity<List<ProfileDTO>> getProfilesByDepartmentAndYear(
-            @RequestParam String department,
             @RequestParam Integer year
     ) {
         List<ProfileDTO> profiles = profileService.getProfilesByDepartmentAndYear(department, year);
