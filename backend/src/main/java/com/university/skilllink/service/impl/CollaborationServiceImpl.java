@@ -8,7 +8,6 @@ import com.university.skilllink.exception.ResourceNotFoundException;
 import com.university.skilllink.model.CollaborationApplication;
 import com.university.skilllink.model.CollaborationPost;
 import com.university.skilllink.model.Notification;
-import com.university.skilllink.model.User;
 import com.university.skilllink.repository.CollaborationApplicationRepository;
 import com.university.skilllink.repository.CollaborationPostRepository;
 import com.university.skilllink.service.CollaborationService;
