@@ -80,7 +80,7 @@ public class ProfileController {
     }
 
     /**
-     * Filter profiles by department and year
+     * Filter profiles by year
      */
     @GetMapping("/filter")
     public ResponseEntity<List<ProfileDTO>> getProfilesByDepartmentAndYear(
