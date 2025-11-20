@@ -1,5 +1,6 @@
 package com.university.skilllink.service.impl;
 
+import com.university.skilllink.dto.auth.UserDTO;
 import com.university.skilllink.dto.collaboration.CollabApplicationDTO;
 import com.university.skilllink.dto.collaboration.CollabPostDTO;
 import com.university.skilllink.exception.ForbiddenException;
@@ -117,8 +118,9 @@ public class CollaborationServiceImpl implements CollaborationService {
         postRepo.save(post);
 
         // Notify post creator about new application
-        User applicant = userService.getUserById(applicantUserId);
+        UserDTO applicant = userService.getUserById(applicantUserId);
         String applicantName = applicant != null ? applicant.getFullName() : "Someone";
+
         String content = String.format("%s applied to your collaboration post: %s", applicantName, post.getTitle());
         notificationService.send(post.getCreatedBy(), Notification.NotificationType.NEW_REQUEST, content, "/collaborations/" + post.getId());
 
