@@ -68,4 +68,13 @@ public class UserServiceImpl implements UserService {
         user.setIsActive(true);
         userRepository.save(user);
     }
+
+    // NEW: Get all active user IDs for notifications
+    @Override
+    public List<String> getAllActiveUserIds() {
+        return userRepository.findAll().stream()
+                .filter(User::getIsActive) // Only users who are active
+                .map(User::getId)
+                .collect(Collectors.toList());
+    }
 }
