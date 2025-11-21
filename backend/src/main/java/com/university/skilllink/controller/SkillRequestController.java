@@ -1,6 +1,6 @@
 package com.university.skilllink.controller;
 
-import com.university.skilllink.dto.Request.RequestDTO; // create simple DTOs
+import com.university.skilllink.dto.Request.RequestDTO;
 import com.university.skilllink.model.SkillRequest;
 import com.university.skilllink.service.RequestService;
 import com.university.skilllink.service.UserService;
