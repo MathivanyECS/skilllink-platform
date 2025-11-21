@@ -6,28 +6,40 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
 
-@Data
+@Document(collection = "notifications")
+@Getter
+@Setter
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-@Document(collection = "notifications")
 public class Notification {
 
     @Id
     private String id;
 
-    private String receiverId; // User who receives this notification
-    private NotificationType type; // NEW_REQUEST, ACCEPTED, REJECTED, COLLAB
+    // The user who will receive the notification
+    private String userId;
+
+    // Type of notification (for categorizing or filtering)
+    private NotificationType type;
+
+    // Notification message content
     private String content;
-    private String link; // link to collaboration post or application
-    private boolean isRead;
+
+    // Link to navigate when notification is clicked
+    private String link;
+
+    // Read/unread status
+    private boolean read;
+
+    // Timestamp when notification was created
     private LocalDateTime createdAt;
 
+    // Enum for notification types
     public enum NotificationType {
-        NEW_REQUEST, ACCEPTED, REJECTED, COLLAB
-    }
-
-    public void markAsRead() {
-        this.isRead = true;
+        COLLAB,        // New collaboration post created
+        NEW_REQUEST,   // Someone applied to your post
+        ACCEPTED,      // Your application was accepted
+        REJECTED       // Your application was rejected
     }
 }

@@ -43,10 +43,10 @@ public class CollaborationServiceImpl implements CollaborationService {
 
         CollaborationPost savedPost = postRepo.save(post);
 
-        // --- NEW: Notify users about new collaboration post ---
-        List<String> allUserIds = userService.getAllActiveUserIds(); // implement this in UserService
+        // Notify all users about the new post
+        List<String> allUserIds = userService.getAllActiveUserIds();
         for (String userId : allUserIds) {
-            if (!userId.equals(creatorUserId)) { // skip creator
+            if (!userId.equals(creatorUserId)) {
                 notificationService.send(
                         userId,
                         Notification.NotificationType.COLLAB,
@@ -79,9 +79,6 @@ public class CollaborationServiceImpl implements CollaborationService {
         post.setCategory(dto.getCategory());
         post.setDuration(dto.getDuration());
         post.setRequiredSkills(dto.getRequiredSkills());
-
-        // Optional: Notify followers or previous applicants about updates
-
         return postRepo.save(post);
     }
 
@@ -90,7 +87,6 @@ public class CollaborationServiceImpl implements CollaborationService {
         CollaborationPost post = getPostById(postId);
         if (!post.getCreatedBy().equals(userId)) throw new ForbiddenException("Only creator can delete post");
 
-        // Notify all applicants that the post is deleted
         List<CollaborationApplication> apps = appRepo.findByPostId(postId);
         for (CollaborationApplication a : apps) {
             notificationService.send(
@@ -110,9 +106,7 @@ public class CollaborationServiceImpl implements CollaborationService {
         CollaborationPost post = getPostById(postId);
         if (!"OPEN".equals(post.getStatus())) throw new ForbiddenException("Post not open for applications");
 
-        // Prevent duplicate applications
-        List<CollaborationApplication> existing = appRepo.findByPostId(postId);
-        boolean alreadyApplied = existing.stream()
+        boolean alreadyApplied = appRepo.findByPostId(postId).stream()
                 .anyMatch(a -> a.getApplicantId().equals(applicantUserId));
         if (alreadyApplied) throw new ForbiddenException("You already applied to this post");
 
@@ -125,19 +119,16 @@ public class CollaborationServiceImpl implements CollaborationService {
                 .build();
 
         CollaborationApplication savedApp = appRepo.save(app);
-
-        // Add applicant ID to post
         post.getApplicants().add(applicantUserId);
         postRepo.save(post);
 
-        // Notify post creator about new application
         UserDTO applicant = userService.getUserById(applicantUserId);
         String applicantName = applicant != null ? applicant.getFullName() : "Someone";
 
         notificationService.send(
                 post.getCreatedBy(),
                 Notification.NotificationType.NEW_REQUEST,
-                String.format("%s applied to your collaboration post: %s", applicantName, post.getTitle()),
+                applicantName + " applied to your collaboration post: " + post.getTitle(),
                 "/collaborations/" + post.getId()
         );
 
@@ -169,12 +160,11 @@ public class CollaborationServiceImpl implements CollaborationService {
         notificationService.send(
                 app.getApplicantId(),
                 type,
-                accept ? String.format("Your application to '%s' was accepted.", post.getTitle())
-                       : String.format("Your application to '%s' was rejected by the post creator.", post.getTitle()),
+                accept ? "Your application to '" + post.getTitle() + "' was accepted."
+                       : "Your application to '" + post.getTitle() + "' was rejected by the post creator.",
                 "/collaborations/" + post.getId()
         );
 
-        // If accepted, mark post as filled
         if (accept) {
             post.setStatus("FILLED");
             postRepo.save(post);
@@ -190,7 +180,6 @@ public class CollaborationServiceImpl implements CollaborationService {
 
         post.setStatus("CLOSED");
 
-        // Notify all applicants that post is closed
         List<CollaborationApplication> apps = appRepo.findByPostId(postId);
         for (CollaborationApplication a : apps) {
             notificationService.send(

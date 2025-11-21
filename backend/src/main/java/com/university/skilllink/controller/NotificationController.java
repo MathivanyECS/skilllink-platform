@@ -13,24 +13,45 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/notifications")
 @RequiredArgsConstructor
-@CrossOrigin(origins = {"http://localhost:3000","http://localhost:5173"})
+@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:5173"})
 public class NotificationController {
 
     private final NotificationService notificationService;
     private final UserService userService;
 
-    // Get all notifications for the logged-in user
+    /**
+     * Get notifications for the logged-in user
+     */
     @GetMapping
     public ResponseEntity<List<Notification>> getNotifications(Authentication auth) {
-        String userId = userService.getUserByEmail(auth.getName()).getId();
-        List<Notification> notifications = notificationService.getNotificationsForUser(userId);
+        String email = auth.getName();
+        String userId = userService.getUserByEmail(email).getId();
+
+        List<Notification> notifications = notificationService.getUserNotifications(userId);
         return ResponseEntity.ok(notifications);
     }
 
-    // Mark a notification as read
+    /**
+     * Mark a single notification as read
+     */
     @PutMapping("/{notificationId}/read")
-    public ResponseEntity<Void> markAsRead(@PathVariable String notificationId) {
-        notificationService.markAsRead(notificationId);
+    public ResponseEntity<Void> markAsRead(@PathVariable String notificationId, Authentication auth) {
+        String email = auth.getName();
+        String userId = userService.getUserByEmail(email).getId();
+        
+        notificationService.markAsRead(notificationId, userId);
+        return ResponseEntity.noContent().build();
+    }
+    
+    /**
+     * Mark all notifications as read for the current user
+     */
+    @PutMapping("/read-all")
+    public ResponseEntity<Void> markAllAsRead(Authentication auth) {
+        String email = auth.getName();
+        String userId = userService.getUserByEmail(email).getId();
+        
+        notificationService.markAllAsRead(userId);
         return ResponseEntity.noContent().build();
     }
 }
