@@ -1,7 +1,6 @@
 package com.university.skilllink.service;
 
 import com.university.skilllink.model.SkillRequest;
-
 import java.util.List;
 
 public interface RequestService {
