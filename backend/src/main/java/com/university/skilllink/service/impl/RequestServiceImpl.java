@@ -42,14 +42,12 @@ public class RequestServiceImpl implements RequestService {
         String title = "New learning request";
         String message = String.format("%s requested to learn %s from you.", seekerName, skillName);
 
-        // metadata: include request id and link path
         Map<String, String> meta = new HashMap<>();
         meta.put("requestId", saved.getId());
         meta.put("url", "/requests/" + saved.getId());
         meta.put("skillName", skillName);
         meta.put("seekerId", seekerId);
 
-        // Use sendToUser so it's explicit and carries metadata
         notificationService.sendToUser(providerId, "NEW_REQUEST", title, message, meta);
 
         return saved;
@@ -105,8 +103,7 @@ public class RequestServiceImpl implements RequestService {
                 meta.put("providerId", req.getProviderId());
                 meta.put("skillName", req.getSkillName());
 
-                // notify seeker
-                notificationService.sendToUser(req.getSeekerId(), "REQUEST_ACCEPTED", title, message, meta);
+                notificationService.sendToUser(req.getSeekerId(), "ACCEPTED", title, message, meta);
             }
             case REJECTED -> {
                 String title = "Request rejected";
@@ -116,7 +113,7 @@ public class RequestServiceImpl implements RequestService {
                 meta.put("skillName", req.getSkillName());
                 meta.put("providerId", req.getProviderId());
 
-                notificationService.sendToUser(req.getSeekerId(), "REQUEST_REJECTED", title, message, meta);
+                notificationService.sendToUser(req.getSeekerId(), "REJECTED", title, message, meta);
             }
             case COMPLETED -> {
                 String title = "Session completed";
@@ -126,8 +123,8 @@ public class RequestServiceImpl implements RequestService {
                 meta.put("url", "/sessions/" + saved.getId());
                 meta.put("skillName", req.getSkillName());
 
-                notificationService.sendToUser(req.getSeekerId(), "SESSION_COMPLETED", title, message, meta);
-                notificationService.sendToUser(req.getProviderId(), "SESSION_COMPLETED", title, message, meta);
+                notificationService.sendToUser(req.getSeekerId(), "COLLAB", title, message, meta);
+                notificationService.sendToUser(req.getProviderId(), "COLLAB", title, message, meta);
             }
             default -> {
                 String title = "Request updated";
@@ -136,7 +133,7 @@ public class RequestServiceImpl implements RequestService {
                 meta.put("requestId", saved.getId());
                 meta.put("skillName", req.getSkillName());
 
-                notificationService.sendToUser(req.getSeekerId(), "REQUEST_UPDATED", title, message, meta);
+                notificationService.sendToUser(req.getSeekerId(), "NEW_REQUEST", title, message, meta);
             }
         }
 
