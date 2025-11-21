@@ -1,68 +1,45 @@
 package com.university.skilllink.model;
 
 import lombok.*;
-<<<<<<< HEAD
-import org.springframework.data.annotation.CreatedDate;
-=======
->>>>>>> feature/collaboration
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
-<<<<<<< HEAD
-import java.util.Map;
 
-@Data
+@Document(collection = "notifications")
+@Getter
+@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Document(collection = "notifications")
 public class Notification {
+
     @Id
     private String id;
 
-    // recipient user id
+    // The user who will receive the notification
     private String userId;
 
-    // e.g., REQUEST, WISHLIST_CREATED, WISHLIST_AVAILABLE, REQUEST_ACCEPTED, REQUEST_REJECTED
-    private String type;
+    // Type of notification (for categorizing or filtering)
+    private NotificationType type;
 
-    private String title;
-    private String message;
-
-    // optional metadata (providerId, skillName, requestId, etc.)
-    private Map<String, String> metadata;
-
-    @Builder.Default
-    private Boolean read = false;
-
-    @CreatedDate
-    private LocalDateTime createdAt;
-=======
-
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-@Document(collection = "notifications")
-public class Notification {
-
-    @Id
-    private String id;
-
-    private String receiverId; // User who receives this notification
-    private NotificationType type; // NEW_REQUEST, ACCEPTED, REJECTED, COLLAB
+    // Notification message content
     private String content;
-    private String link; // link to collaboration post or application
-    private boolean isRead;
+
+    // Link to navigate when notification is clicked
+    private String link;
+
+    // Read/unread status
+    private boolean read;
+
+    // Timestamp when notification was created
     private LocalDateTime createdAt;
 
+    // Enum for notification types
     public enum NotificationType {
-        NEW_REQUEST, ACCEPTED, REJECTED, COLLAB
+        COLLAB,        // New collaboration post created
+        NEW_REQUEST,   // Someone applied to your post
+        ACCEPTED,      // Your application was accepted
+        REJECTED       // Your application was rejected
     }
-
-    public void markAsRead() {
-        this.isRead = true;
-    }
->>>>>>> feature/collaboration
 }
