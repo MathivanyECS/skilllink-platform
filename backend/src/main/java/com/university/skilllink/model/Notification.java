@@ -20,8 +20,8 @@ public class Notification {
     // recipient user id
     private String userId;
 
-    // e.g., REQUEST, WISHLIST_CREATED, WISHLIST_AVAILABLE, REQUEST_ACCEPTED, REQUEST_REJECTED
-    private String type;
+    // use enum for type safety
+    private NotificationType type;
 
     private String title;
     private String message;
