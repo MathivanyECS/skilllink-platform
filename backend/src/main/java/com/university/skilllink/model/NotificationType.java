@@ -3,7 +3,7 @@ package com.university.skilllink.model;
 
 public enum NotificationType {
     // kept broad set to cover existing DB values and new ones used by the backend
-    COLLAB,               // collaboration post related
+    CONNECT,              // collaboration post related
     REQUEST,              // someone sent a skill request
     REQUEST_ACCEPTED,     // provider accepted a request
     REQUEST_REJECTED,     // provider rejected a request
