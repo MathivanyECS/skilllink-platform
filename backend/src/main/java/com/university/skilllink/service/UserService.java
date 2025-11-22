@@ -11,4 +11,7 @@ public interface UserService {
     boolean isProfileCompleted(String userId);
     void deactivateUser(String userId);
     void activateUser(String userId);
+
+    // NEW: Get all active user IDs
+    List<String> getAllActiveUserIds();
 }
