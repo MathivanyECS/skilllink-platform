@@ -50,7 +50,7 @@ public class CollaborationServiceImpl implements CollaborationService {
             if (!userId.equals(creatorUserId)) {
                 notificationService.send(
                         userId,
-                        NotificationType.COLLAB.name()+
+                        NotificationType.CONNECT.name()+
                         "A new collaboration post has been created: " + post.getTitle(),
                         "/collaborations/" + savedPost.getId()
                 );
@@ -92,7 +92,7 @@ public class CollaborationServiceImpl implements CollaborationService {
         for (CollaborationApplication a : apps) {
             notificationService.send(
     a.getApplicantId(),
-    NotificationType.COLLAB.name() 
+    NotificationType.CONNECT.name() 
         + " - A collaboration post you applied for was deleted by the creator.",
     "/collaborations/" + postId
 
@@ -191,7 +191,7 @@ public class CollaborationServiceImpl implements CollaborationService {
         for (CollaborationApplication a : apps) {
             notificationService.send(
                     a.getApplicantId(),
-                    NotificationType.COLLAB.name()+
+                    NotificationType.CONNECT.name()+
                     "The collaboration post you applied for has been closed by the creator.",
                     "/collaborations/" + postId
             );
