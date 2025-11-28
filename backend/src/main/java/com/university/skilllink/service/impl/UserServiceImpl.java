@@ -1,8 +1,11 @@
 package com.university.skilllink.service.impl;
 
 import com.university.skilllink.dto.auth.UserDTO;
+import com.university.skilllink.dto.profile.OfferedSkillDTO;
 import com.university.skilllink.exception.CustomExceptions.UserNotFoundException;
+import com.university.skilllink.model.Profile;
 import com.university.skilllink.model.User;
+import com.university.skilllink.repository.ProfileRepository;
 import com.university.skilllink.repository.UserRepository;
 import com.university.skilllink.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -17,19 +20,18 @@ import java.util.stream.Collectors;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
+    private final ProfileRepository profileRepository;
 
     // --- User retrieval ---
     @Override
     public UserDTO getUserById(String userId) {
-        User user = findUserById(userId);
-        return UserDTO.fromUser(user);
+        return UserDTO.fromUser(findUserById(userId));
     }
 
     @Override
     public UserDTO getUserByEmail(String email) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
-        return UserDTO.fromUser(user);
+        return UserDTO.fromUser(userRepository.findByEmail(email)
+                .orElseThrow(() -> new UserNotFoundException("User not found with email: " + email)));
     }
 
     @Override
@@ -52,7 +54,7 @@ public class UserServiceImpl implements UserService {
         return findUserById(userId).getIsProfileCompleted();
     }
 
-    // --- Activation / Deactivation ---
+    // --- Activation / deactivation ---
     @Override
     public void deactivateUser(String userId) {
         User user = findUserById(userId);
@@ -78,57 +80,76 @@ public class UserServiceImpl implements UserService {
     // --- Skills management ---
     @Override
     public List<String> getUserOfferedSkills(String userId) {
-        return new ArrayList<>(findUserById(userId).getOfferedSkills());
+        Profile profile = profileRepository.findByUserId(userId)
+                .orElseThrow(() -> new UserNotFoundException("Profile not found for user: " + userId));
+        List<String> skills = new ArrayList<>();
+        profile.getSkillsToTeach().forEach(skill -> skills.add(skill.getSkillName()));
+        return skills;
+    }
+
+    @Override
+    public List<OfferedSkillDTO> getUserOfferedSkillsDetailed(String userId) {
+        Profile profile = profileRepository.findByUserId(userId)
+                .orElseThrow(() -> new UserNotFoundException("Profile not found for user: " + userId));
+        return profile.getSkillsToTeach().stream()
+                .map(OfferedSkillDTO::fromSkill)
+                .collect(Collectors.toList());
     }
 
     @Override
     public List<String> getUserDesiredSkills(String userId) {
-        return new ArrayList<>(findUserById(userId).getDesiredSkills());
+        Profile profile = profileRepository.findByUserId(userId)
+                .orElseThrow(() -> new UserNotFoundException("Profile not found for user: " + userId));
+        return new ArrayList<>(profile.getSkillsToLearn());
     }
 
     @Override
     public void addOfferedSkill(String userId, String skill) {
-        User user = findUserById(userId);
-        if (!user.getOfferedSkills().contains(skill)) {
-            user.getOfferedSkills().add(skill);
-            userRepository.save(user);
+        Profile profile = profileRepository.findByUserId(userId)
+                .orElseThrow(() -> new UserNotFoundException("Profile not found for user: " + userId));
+        boolean exists = profile.getSkillsToTeach().stream()
+                .anyMatch(s -> s.getSkillName().equalsIgnoreCase(skill));
+        if (!exists) {
+            profile.getSkillsToTeach().add(Profile.SkillToTeach.builder()
+                    .skillName(skill)
+                    .proficiency(Profile.SkillProficiency.BEGINNER)
+                    .yearsOfExperience(0)
+                    .build());
+            profileRepository.save(profile);
         }
     }
 
     @Override
     public void removeOfferedSkill(String userId, String skill) {
-        User user = findUserById(userId);
-        if (user.getOfferedSkills().contains(skill)) {
-            user.getOfferedSkills().remove(skill);
-            userRepository.save(user);
-        }
+        Profile profile = profileRepository.findByUserId(userId)
+                .orElseThrow(() -> new UserNotFoundException("Profile not found for user: " + userId));
+        profile.getSkillsToTeach().removeIf(s -> s.getSkillName().equalsIgnoreCase(skill));
+        profileRepository.save(profile);
     }
 
     @Override
     public void addDesiredSkill(String userId, String skill) {
-        User user = findUserById(userId);
-        if (!user.getDesiredSkills().contains(skill)) {
-            user.getDesiredSkills().add(skill);
-            userRepository.save(user);
+        Profile profile = profileRepository.findByUserId(userId)
+                .orElseThrow(() -> new UserNotFoundException("Profile not found for user: " + userId));
+        if (!profile.getSkillsToLearn().contains(skill)) {
+            profile.getSkillsToLearn().add(skill);
+            profileRepository.save(profile);
         }
     }
 
     @Override
     public void removeDesiredSkill(String userId, String skill) {
-        User user = findUserById(userId);
-        if (user.getDesiredSkills().contains(skill)) {
-            user.getDesiredSkills().remove(skill);
-            userRepository.save(user);
-        }
+        Profile profile = profileRepository.findByUserId(userId)
+                .orElseThrow(() -> new UserNotFoundException("Profile not found for user: " + userId));
+        profile.getSkillsToLearn().remove(skill);
+        profileRepository.save(profile);
     }
 
-    // --- Ratings management ---
+    // --- Ratings ---
     @Override
     public double getUserRating(String userId) {
-        User user = findUserById(userId);
-        List<Double> ratings = user.getRatings();
-        if (ratings.isEmpty()) return 0.0;
-        return ratings.stream().mapToDouble(Double::doubleValue).average().orElse(0.0);
+        List<Double> ratings = findUserById(userId).getRatings();
+        return ratings.isEmpty() ? 0.0 : ratings.stream().mapToDouble(Double::doubleValue).average().orElse(0.0);
     }
 
     @Override
@@ -138,7 +159,7 @@ public class UserServiceImpl implements UserService {
         userRepository.save(user);
     }
 
-    // --- Session management ---
+    // --- Sessions ---
     @Override
     public List<String> getUserSessionIds(String userId) {
         return new ArrayList<>(findUserById(userId).getSessionIds());
@@ -156,8 +177,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public void removeUserSession(String userId, String sessionId) {
         User user = findUserById(userId);
-        if (user.getSessionIds().contains(sessionId)) {
-            user.getSessionIds().remove(sessionId);
+        if (user.getSessionIds().remove(sessionId)) {
             userRepository.save(user);
         }
     }
@@ -182,7 +202,7 @@ public class UserServiceImpl implements UserService {
         userRepository.save(user);
     }
 
-    // --- Private helper ---
+    // --- Helper ---
     private User findUserById(String userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("User not found with ID: " + userId));
