@@ -26,35 +26,30 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public AuthResponse register(RegisterRequest request) {
-        // Check if email already exists
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new EmailAlreadyExistsException("Email already registered: " + request.getEmail());
         }
-
-        // Check if student ID already exists
         if (userRepository.existsByStudentId(request.getStudentId())) {
             throw new StudentIdAlreadyExistsException("Student ID already registered: " + request.getStudentId());
         }
 
-        // Create new user
+        // Assign role from request, default to STUDENT
+        User.UserRole role = request.getRole() != null ?
+                User.UserRole.valueOf(request.getRole().toUpperCase()) :
+                User.UserRole.STUDENT;
+
         User user = User.builder()
                 .fullName(request.getFullName())
                 .email(request.getEmail())
                 .studentId(request.getStudentId())
                 .password(passwordEncoder.encode(request.getPassword()))
-                .role(
-                        request.getRole() != null ?
-                                User.UserRole.valueOf(request.getRole().toUpperCase()) :
-                                User.UserRole.STUDENT
-                )
+                .role(role)
                 .isProfileCompleted(false)
                 .isActive(true)
                 .build();
 
-        // Save user
         User savedUser = userRepository.save(user);
 
-        // Generate JWT token
         String token = jwtUtil.generateToken(
                 org.springframework.security.core.userdetails.User.builder()
                         .username(savedUser.getEmail())
@@ -63,33 +58,26 @@ public class AuthServiceImpl implements AuthService {
                         .build()
         );
 
-        // Return response
         return new AuthResponse(token, UserDTO.fromUser(savedUser));
     }
 
     @Override
     public AuthResponse login(LoginRequest request) {
-        // Authenticate user
         try {
             authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(
-                            request.getEmail(),
-                            request.getPassword())
+                    new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
             );
         } catch (Exception e) {
             throw new InvalidCredentialsException("Invalid email or password");
         }
 
-        // Find user
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
 
-        // Check if user is active
         if (!user.getIsActive()) {
             throw new AccountDeactivatedException("Your account has been deactivated. Please contact support.");
         }
 
-        // Generate JWT token
         String token = jwtUtil.generateToken(
                 org.springframework.security.core.userdetails.User.builder()
                         .username(user.getEmail())
@@ -98,7 +86,6 @@ public class AuthServiceImpl implements AuthService {
                         .build()
         );
 
-        // Return response
         return new AuthResponse(token, UserDTO.fromUser(user));
     }
 
@@ -126,10 +113,9 @@ public class AuthServiceImpl implements AuthService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
 
-        // Generate reset token
         String resetToken = UUID.randomUUID().toString();
         user.setResetPasswordToken(resetToken);
-        user.setResetPasswordExpiry(LocalDateTime.now().plusHours(24)); // Token valid for 24 hours
+        user.setResetPasswordExpiry(LocalDateTime.now().plusHours(24));
 
         userRepository.save(user);
         return resetToken;
@@ -140,12 +126,10 @@ public class AuthServiceImpl implements AuthService {
         User user = userRepository.findByResetPasswordToken(token)
                 .orElseThrow(() -> new InvalidTokenException("Invalid or expired reset token"));
 
-        // Check if token is expired
         if (user.getResetPasswordExpiry().isBefore(LocalDateTime.now())) {
             throw new InvalidTokenException("Reset token has expired");
         }
 
-        // Update password
         user.setPassword(passwordEncoder.encode(newPassword));
         user.setResetPasswordToken(null);
         user.setResetPasswordExpiry(null);
