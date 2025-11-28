@@ -42,13 +42,16 @@ public class AuthServiceImpl implements AuthService {
                 .email(request.getEmail())
                 .studentId(request.getStudentId())
                 .password(passwordEncoder.encode(request.getPassword()))
-                .role(User.UserRole.STUDENT)
+                .role(
+                        request.getRole() != null ?
+                                User.UserRole.valueOf(request.getRole().toUpperCase()) :
+                                User.UserRole.STUDENT
+                )
                 .isProfileCompleted(false)
                 .isActive(true)
                 .build();
 
         // Save user
-        @SuppressWarnings("unused")
         User savedUser = userRepository.save(user);
 
         // Generate JWT token
@@ -68,7 +71,7 @@ public class AuthServiceImpl implements AuthService {
     public AuthResponse login(LoginRequest request) {
         // Authenticate user
         try {
-             authenticationManager.authenticate(
+            authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
                             request.getEmail(),
                             request.getPassword())
@@ -80,7 +83,7 @@ public class AuthServiceImpl implements AuthService {
         // Find user
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
-        
+
         // Check if user is active
         if (!user.getIsActive()) {
             throw new AccountDeactivatedException("Your account has been deactivated. Please contact support.");
@@ -129,9 +132,6 @@ public class AuthServiceImpl implements AuthService {
         user.setResetPasswordExpiry(LocalDateTime.now().plusHours(24)); // Token valid for 24 hours
 
         userRepository.save(user);
-
-        // In production, send this token via email
-        // For now, return it (remove this in production!)
         return resetToken;
     }
 
@@ -139,12 +139,12 @@ public class AuthServiceImpl implements AuthService {
     public void resetPassword(String token, String newPassword) {
         User user = userRepository.findByResetPasswordToken(token)
                 .orElseThrow(() -> new InvalidTokenException("Invalid or expired reset token"));
-        
+
         // Check if token is expired
-        if (user.getResetPasswordExpiry().isBefore(LocalDateTime.now())) { 
+        if (user.getResetPasswordExpiry().isBefore(LocalDateTime.now())) {
             throw new InvalidTokenException("Reset token has expired");
         }
-        
+
         // Update password
         user.setPassword(passwordEncoder.encode(newPassword));
         user.setResetPasswordToken(null);
