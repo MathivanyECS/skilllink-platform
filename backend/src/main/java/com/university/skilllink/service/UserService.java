@@ -1,6 +1,8 @@
 package com.university.skilllink.service;
 
 import com.university.skilllink.dto.auth.UserDTO;
+import com.university.skilllink.dto.profile.OfferedSkillDTO;
+
 import java.util.List;
 
 public interface UserService {
@@ -9,7 +11,7 @@ public interface UserService {
     UserDTO getUserById(String userId);
     UserDTO getUserByEmail(String email);
     List<UserDTO> getAllUsers();
-    
+
     // Profile management
     void updateProfileCompletionStatus(String userId, boolean isCompleted);
     boolean isProfileCompleted(String userId);
@@ -19,8 +21,10 @@ public interface UserService {
     void activateUser(String userId);
 
     // Skills management
-    List<String> getUserOfferedSkills(String userId);
     List<String> getUserDesiredSkills(String userId);
+    List<String> getUserOfferedSkills(String userId);
+    List<OfferedSkillDTO> getUserOfferedSkillsDetailed(String userId);
+
     void addOfferedSkill(String userId, String skill);
     void removeOfferedSkill(String userId, String skill);
     void addDesiredSkill(String userId, String skill);
@@ -40,6 +44,6 @@ public interface UserService {
     List<String> getNotifications(String userId);
     void clearNotifications(String userId);
 
-    // Get all active user IDs
+    // Active users
     List<String> getAllActiveUserIds();
 }
