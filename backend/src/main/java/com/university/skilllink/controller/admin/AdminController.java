@@ -2,6 +2,7 @@ package com.university.skilllink.controller.admin;
 
 import com.university.skilllink.dto.auth.RegisterRequest;
 import com.university.skilllink.dto.auth.UserDTO;
+import com.university.skilllink.dto.profile.OfferedSkillDTO;
 import com.university.skilllink.service.AuthService;
 import com.university.skilllink.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -26,7 +27,6 @@ public class AdminController {
     }
 
     // --- USER MANAGEMENT ---
-
     @GetMapping("/users")
     public ResponseEntity<List<UserDTO>> getAllUsers() {
         return ResponseEntity.ok(userService.getAllUsers());
@@ -51,13 +51,27 @@ public class AdminController {
 
     // --- SKILLS ---
     @GetMapping("/users/{id}/offered-skills")
-    public ResponseEntity<List<String>> getOfferedSkills(@PathVariable("id") String userId) {
-        return ResponseEntity.ok(userService.getUserOfferedSkills(userId));
+    public ResponseEntity<List<OfferedSkillDTO>> getOfferedSkills(@PathVariable("id") String userId) {
+        return ResponseEntity.ok(userService.getUserOfferedSkillsDetailed(userId));
     }
 
     @GetMapping("/users/{id}/desired-skills")
     public ResponseEntity<List<String>> getDesiredSkills(@PathVariable("id") String userId) {
         return ResponseEntity.ok(userService.getUserDesiredSkills(userId));
+    }
+
+    @PostMapping("/users/{id}/offered-skills")
+    public ResponseEntity<String> addOfferedSkill(@PathVariable("id") String userId,
+                                                  @RequestParam String skill) {
+        userService.addOfferedSkill(userId, skill);
+        return ResponseEntity.ok("Offered skill added successfully");
+    }
+
+    @PostMapping("/users/{id}/desired-skills")
+    public ResponseEntity<String> addDesiredSkill(@PathVariable("id") String userId,
+                                                  @RequestParam String skill) {
+        userService.addDesiredSkill(userId, skill);
+        return ResponseEntity.ok("Desired skill added successfully");
     }
 
     // --- NOTIFICATIONS ---
