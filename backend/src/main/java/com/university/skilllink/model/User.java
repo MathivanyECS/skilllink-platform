@@ -11,6 +11,8 @@ import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Data
 @Builder
@@ -39,6 +41,22 @@ public class User {
 
     @Builder.Default
     private Boolean isActive = true;
+
+    // SkillLink specific fields
+    @Builder.Default
+    private List<String> offeredSkills = new ArrayList<>();
+
+    @Builder.Default
+    private List<String> desiredSkills = new ArrayList<>();
+
+    @Builder.Default
+    private List<Double> ratings = new ArrayList<>();
+
+    @Builder.Default
+    private List<String> sessionIds = new ArrayList<>();
+
+    @Builder.Default
+    private List<String> notifications = new ArrayList<>();
 
     // Password reset fields
     private String resetPasswordToken;
