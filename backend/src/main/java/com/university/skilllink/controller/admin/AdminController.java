@@ -4,6 +4,7 @@ import com.university.skilllink.dto.auth.AdminRegisterRequest;
 import com.university.skilllink.dto.auth.RegisterRequest;
 import com.university.skilllink.dto.auth.UserDTO;
 import com.university.skilllink.dto.profile.OfferedSkillDTO;
+import com.university.skilllink.dto.admin.ActiveUserDTO;
 import com.university.skilllink.model.Notification;
 import com.university.skilllink.service.AuthService;
 import com.university.skilllink.service.NotificationService;
@@ -83,8 +84,10 @@ public class AdminController {
     }
 
     // --- ACTIVE USERS ---
+    // Updated to return detailed info instead of just IDs
     @GetMapping("/active-users")
-    public ResponseEntity<List<String>> getAllActiveUserIds() {
-        return ResponseEntity.ok(userService.getAllActiveUserIds());
+    public ResponseEntity<List<ActiveUserDTO>> getAllActiveUsers() {
+        List<ActiveUserDTO> users = userService.getAllActiveUsers();
+        return ResponseEntity.ok(users);
     }
 }
