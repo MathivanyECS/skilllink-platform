@@ -50,7 +50,7 @@ public class SkillRequestServiceImpl implements RequestService {
 
         Notification notification = Notification.builder()
                 .userId(providerId)
-                .type(NotificationType.REQUEST)
+                .type(NotificationType.NEW_REQUEST)
                 .title("New skill request")
                 .message("You received a new request for '" + skillName + "'")
                 .metadata(meta)
