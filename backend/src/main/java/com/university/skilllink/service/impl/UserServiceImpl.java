@@ -2,6 +2,7 @@ package com.university.skilllink.service.impl;
 
 import com.university.skilllink.dto.auth.UserDTO;
 import com.university.skilllink.dto.profile.OfferedSkillDTO;
+import com.university.skilllink.dto.admin.ActiveUserDTO;
 import com.university.skilllink.exception.CustomExceptions.UserNotFoundException;
 import com.university.skilllink.model.Profile;
 import com.university.skilllink.model.User;
@@ -74,6 +75,20 @@ public class UserServiceImpl implements UserService {
         return userRepository.findAll().stream()
                 .filter(User::getIsActive)
                 .map(User::getId)
+                .collect(Collectors.toList());
+    }
+
+    // --- New: detailed active users ---
+    @Override
+    public List<ActiveUserDTO> getAllActiveUsers() {
+        return userRepository.findAll().stream()
+                .filter(User::getIsActive)
+                .map(user -> ActiveUserDTO.builder()
+                        .id(user.getId())
+                        .fullName(user.getFullName())
+                        .email(user.getEmail())
+                        .role(user.getRole().name())
+                        .build())
                 .collect(Collectors.toList());
     }
 
