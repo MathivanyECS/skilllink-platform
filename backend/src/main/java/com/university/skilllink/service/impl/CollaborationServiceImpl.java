@@ -130,7 +130,7 @@ public class CollaborationServiceImpl implements CollaborationService {
 
         notificationService.send(
     post.getCreatedBy(),
-    NotificationType.REQUEST.name() + " - " 
+    NotificationType.NEW_REQUEST.name() + " - " 
         + applicantName + " applied to your collaboration post: " + post.getTitle(),
     "/collaborations/" + post.getId()
 );
