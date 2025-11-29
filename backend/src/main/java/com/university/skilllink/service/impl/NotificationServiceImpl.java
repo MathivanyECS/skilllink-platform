@@ -14,10 +14,6 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.*;
 
-/**
- * Implementation that supports both the new strongly-typed API and older string-typed helpers.
- * Keeps behavior safe: sets createdAt and read default values, avoids crashing on unknown enum values.
- */
 @Service
 @RequiredArgsConstructor
 public class NotificationServiceImpl implements NotificationService {
@@ -25,18 +21,13 @@ public class NotificationServiceImpl implements NotificationService {
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
 
-    // -------------------
-    // Creation / sending
-    // -------------------
-
+    // ------------------- Creation / Sending -------------------
     @Override
     public Notification createNotification(Notification notification) {
         if (notification == null) return null;
-
         if (notification.getCreatedAt() == null) notification.setCreatedAt(LocalDateTime.now());
         if (notification.getRead() == null) notification.setRead(false);
         if (notification.getMetadata() == null) notification.setMetadata(Map.of());
-
         return notificationRepository.save(notification);
     }
 
@@ -76,30 +67,17 @@ public class NotificationServiceImpl implements NotificationService {
         if (!batch.isEmpty()) notificationRepository.saveAll(batch);
     }
 
-    // -------------------
-    // Backwards-compatible & convenience helpers
-    // -------------------
-
     @Override
     public void sendToUser(String userId, String type, String title, String message, Map<String, String> meta) {
-        // try to convert string type to enum; fallback to GENERIC
         NotificationType notifType;
-        try {
-            notifType = NotificationType.valueOf(type);
-        } catch (Exception ex) {
-            notifType = NotificationType.GENERIC;
-        }
+        try { notifType = NotificationType.valueOf(type); } catch (Exception ex) { notifType = NotificationType.GENERIC; }
         sendToUser(userId, notifType, title, message, meta);
     }
 
     @Override
     public void sendToAllUsers(String type, String title, String message, Map<String, String> meta) {
         NotificationType notifType;
-        try {
-            notifType = NotificationType.valueOf(type);
-        } catch (Exception ex) {
-            notifType = NotificationType.GENERIC;
-        }
+        try { notifType = NotificationType.valueOf(type); } catch (Exception ex) { notifType = NotificationType.GENERIC; }
         sendToAllUsers(notifType, title, message, meta);
     }
 
@@ -118,10 +96,7 @@ public class NotificationServiceImpl implements NotificationService {
         notificationRepository.save(n);
     }
 
-    // -------------------
-    // Read operations
-    // -------------------
-
+    // ------------------- Read -------------------
     @Override
     public List<Notification> getNotificationsForUser(String userId) {
         return notificationRepository.findByUserIdOrderByCreatedAtDesc(userId);
@@ -142,10 +117,7 @@ public class NotificationServiceImpl implements NotificationService {
         return notificationRepository.countByUserIdAndReadFalse(userId);
     }
 
-    // -------------------
-    // Mark read
-    // -------------------
-
+    // ------------------- Mark Read -------------------
     @Override
     public void markAsRead(String notificationId) {
         notificationRepository.findById(notificationId).ifPresent(n -> {
@@ -158,7 +130,6 @@ public class NotificationServiceImpl implements NotificationService {
     public void markAsRead(String notificationId, String userId) {
         Notification notification = notificationRepository.findById(notificationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Notification not found"));
-
         if (!notification.getUserId().equals(userId)) {
             throw new ForbiddenException("You cannot modify another user's notification");
         }
@@ -171,5 +142,11 @@ public class NotificationServiceImpl implements NotificationService {
         List<Notification> notifications = notificationRepository.findByUserIdAndReadFalseOrderByCreatedAtDesc(userId);
         notifications.forEach(n -> n.setRead(true));
         if (!notifications.isEmpty()) notificationRepository.saveAll(notifications);
+    }
+
+    // ------------------- Delete -------------------
+    @Override
+    public void deleteAllNotificationsForUser(String userId) {
+        notificationRepository.deleteByUserId(userId);
     }
 }
