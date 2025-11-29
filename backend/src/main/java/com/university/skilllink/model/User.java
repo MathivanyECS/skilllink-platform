@@ -42,7 +42,7 @@ public class User {
     @Builder.Default
     private Boolean isActive = true;
 
-    // SkillLink specific fields
+    // Skills
     @Builder.Default
     private List<String> offeredSkills = new ArrayList<>();
 
@@ -58,7 +58,7 @@ public class User {
     @Builder.Default
     private List<String> notifications = new ArrayList<>();
 
-    // Password reset fields
+    // Password reset
     private String resetPasswordToken;
     private LocalDateTime resetPasswordExpiry;
 
@@ -68,7 +68,6 @@ public class User {
     @LastModifiedDate
     private LocalDateTime updatedAt;
 
-    // Enum for user roles
     public enum UserRole {
         STUDENT,
         ADMIN
