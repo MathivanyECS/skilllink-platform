@@ -6,10 +6,6 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
-/**
- * NotificationRepository - provides convenient finder methods used across the project.
- * This is intentionally small and stable so both feature and development code can use it.
- */
 @Repository
 public interface NotificationRepository extends MongoRepository<Notification, String> {
 
@@ -21,5 +17,7 @@ public interface NotificationRepository extends MongoRepository<Notification, St
 
     // Count unread notifications for a user
     long countByUserIdAndReadFalse(String userId);
+
+    // Delete all notifications for a user
+    void deleteByUserId(String userId);
 }
-git pull
