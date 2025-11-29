@@ -184,13 +184,6 @@ public class UserServiceImpl implements UserService {
 
     // --- Notifications ---
     @Override
-    public void addNotification(String userId, String notification) {
-        User user = findUserById(userId);
-        user.getNotifications().add(notification);
-        userRepository.save(user);
-    }
-
-    @Override
     public List<String> getNotifications(String userId) {
         return new ArrayList<>(findUserById(userId).getNotifications());
     }
