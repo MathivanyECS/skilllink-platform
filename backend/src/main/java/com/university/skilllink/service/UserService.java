@@ -24,26 +24,24 @@ public interface UserService {
     List<String> getUserDesiredSkills(String userId);
     List<String> getUserOfferedSkills(String userId);
     List<OfferedSkillDTO> getUserOfferedSkillsDetailed(String userId);
-
     void addOfferedSkill(String userId, String skill);
     void removeOfferedSkill(String userId, String skill);
     void addDesiredSkill(String userId, String skill);
     void removeDesiredSkill(String userId, String skill);
 
-    // Ratings & reviews
+    // Ratings
     double getUserRating(String userId);
     void addUserRating(String userId, double rating);
 
-    // Session-related
+    // Sessions
     List<String> getUserSessionIds(String userId);
     void addUserSession(String userId, String sessionId);
     void removeUserSession(String userId, String sessionId);
 
-    // Notifications
-    void addNotification(String userId, String notification);
+    // Notifications  
     List<String> getNotifications(String userId);
     void clearNotifications(String userId);
 
-    // Active users
+    // Active
     List<String> getAllActiveUserIds();
 }
