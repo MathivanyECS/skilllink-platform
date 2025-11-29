@@ -1,9 +1,12 @@
 package com.university.skilllink.controller.admin;
 
+import com.university.skilllink.dto.auth.AdminRegisterRequest;
 import com.university.skilllink.dto.auth.RegisterRequest;
 import com.university.skilllink.dto.auth.UserDTO;
 import com.university.skilllink.dto.profile.OfferedSkillDTO;
+import com.university.skilllink.model.Notification;
 import com.university.skilllink.service.AuthService;
+import com.university.skilllink.service.NotificationService;
 import com.university.skilllink.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -18,12 +21,18 @@ public class AdminController {
 
     private final UserService userService;
     private final AuthService authService;
+    private final NotificationService notificationService;
 
     // -------- CREATE ADMIN --------
     @PostMapping("/create")
-    public ResponseEntity<UserDTO> createAdmin(@RequestBody RegisterRequest request) {
-        request.setRole("ADMIN");
-        return ResponseEntity.ok(authService.register(request).getUser());
+    public ResponseEntity<UserDTO> createAdmin(@RequestBody AdminRegisterRequest request) {
+        RegisterRequest adminRegister = new RegisterRequest();
+        adminRegister.setFullName(request.getFullName());
+        adminRegister.setEmail(request.getEmail());
+        adminRegister.setPassword(request.getPassword());
+        adminRegister.setRole("ADMIN");
+        adminRegister.setStudentId(null); // no student ID for admin
+        return ResponseEntity.ok(authService.register(adminRegister).getUser());
     }
 
     // --- USER MANAGEMENT ---
@@ -76,14 +85,15 @@ public class AdminController {
 
     // --- NOTIFICATIONS ---
     @GetMapping("/users/{id}/notifications")
-    public ResponseEntity<List<String>> getUserNotifications(@PathVariable("id") String userId) {
-        return ResponseEntity.ok(userService.getNotifications(userId));
+    public ResponseEntity<List<Notification>> getUserNotifications(@PathVariable("id") String userId) {
+        List<Notification> notifications = notificationService.getNotificationsForUser(userId);
+        return ResponseEntity.ok(notifications);
     }
 
     @DeleteMapping("/users/{id}/notifications")
     public ResponseEntity<String> clearUserNotifications(@PathVariable("id") String userId) {
-        userService.clearNotifications(userId);
-        return ResponseEntity.ok("Notifications cleared successfully");
+        notificationService.deleteAllNotificationsForUser(userId);
+        return ResponseEntity.ok("Notifications deleted successfully");
     }
 
     // --- ACTIVE USERS ---
