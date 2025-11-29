@@ -69,20 +69,6 @@ public class AdminController {
         return ResponseEntity.ok(userService.getUserDesiredSkills(userId));
     }
 
-    @PostMapping("/users/{id}/offered-skills")
-    public ResponseEntity<String> addOfferedSkill(@PathVariable("id") String userId,
-                                                  @RequestParam String skill) {
-        userService.addOfferedSkill(userId, skill);
-        return ResponseEntity.ok("Offered skill added successfully");
-    }
-
-    @PostMapping("/users/{id}/desired-skills")
-    public ResponseEntity<String> addDesiredSkill(@PathVariable("id") String userId,
-                                                  @RequestParam String skill) {
-        userService.addDesiredSkill(userId, skill);
-        return ResponseEntity.ok("Desired skill added successfully");
-    }
-
     // --- NOTIFICATIONS ---
     @GetMapping("/users/{id}/notifications")
     public ResponseEntity<List<Notification>> getUserNotifications(@PathVariable("id") String userId) {
