@@ -10,6 +10,12 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 import java.time.LocalDateTime;
 import java.util.List;
+/**
+ * SessionBoardController - REST API endpoints for session board management
+ * Handles CRUD operations for virtual classroom sessions
+ * Secured with JWT authentication
+ * Provides APIs for learners and teachers to manage sessions
+ */
 
 @RestController
 @RequestMapping("/api/session-boards")
