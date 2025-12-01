@@ -10,10 +10,19 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
+// Add class-level comment at top:
+/**
+ * Implementation of SessionBoardService interface
+ * Contains business logic for session board operations
+ */
 
 @Service
 @RequiredArgsConstructor
 public class SessionBoardServiceImpl implements SessionBoardService {
+     
+    /**
+     * Creates a new session board and validates uniqueness
+     */
     
     private final SessionBoardRepository sessionBoardRepository;
     
