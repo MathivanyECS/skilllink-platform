@@ -4,6 +4,12 @@ import lombok.Data;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import java.time.LocalDateTime;
+/**
+ * Message Model - Represents chat messages within session boards
+ * Stores communication between learners and teachers
+ * Supports different message types (TEXT, MEETING_SCHEDULE, etc.)
+ * Tracks read status and timestamps for messaging features
+ */
 
 @Document(collection = "messages")
 @Data
