@@ -2,6 +2,12 @@ package com.university.skilllink.dto.sessionboard;
 
 import lombok.Data;
 import jakarta.validation.constraints.NotNull;
+/**
+ * CreateSessionBoardDTO - Request DTO for creating new session boards
+ * Contains only the required fields for session creation
+ * Includes validation annotations for input safety
+ * Used in POST /api/session-boards endpoint
+ */
 
 @Data
 public class CreateSessionBoardDTO {
