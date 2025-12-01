@@ -4,6 +4,12 @@ import lombok.Data;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import java.time.LocalDateTime;
+/**
+ * Review Model - Stores session reviews and ratings
+ * Contains star ratings and detailed feedback for teachers
+ * Links reviews to specific completed learning sessions
+ * Supports public/private review visibility
+ */
 
 @Document(collection = "reviews")
 @Data
