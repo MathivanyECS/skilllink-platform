@@ -1,5 +1,7 @@
 package com.university.skilllink.service.impl;
 
+import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Pattern; // if not already present at top of file
 
 import com.university.skilllink.dto.profile.CreateProfileRequest;
@@ -21,6 +23,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.HashMap;
 
 @Service
 @RequiredArgsConstructor
@@ -30,7 +33,6 @@ public class ProfileServiceImpl implements ProfileService {
     private final ProfileRepository profileRepository;
     private final UserRepository userRepository;
     private final WishlistService wishlistService; // add this to constructor via @RequiredArgsConstructor
-
 
     @Override
     @Transactional
@@ -51,13 +53,15 @@ public class ProfileServiceImpl implements ProfileService {
         }
 
         // Convert DTO skills to entity skills
-        List<Profile.SkillToTeach> skillsToTeach = request.getSkillsToTeach().stream()
-                .map(dto -> Profile.SkillToTeach.builder()
-                        .skillName(dto.getSkillName())
-                        .proficiency(dto.getProficiency())
-                        .yearsOfExperience(dto.getYearsOfExperience())
-                        .build())
-                .collect(Collectors.toList());
+        List<Profile.SkillToTeach> skillsToTeach = request.getSkillsToTeach() == null
+                ? List.of()
+                : request.getSkillsToTeach().stream()
+                        .map(dto -> Profile.SkillToTeach.builder()
+                                .skillName(dto.getSkillName())
+                                .proficiency(dto.getProficiency())
+                                .yearsOfExperience(dto.getYearsOfExperience())
+                                .build())
+                        .collect(Collectors.toList());
 
         // Convert DTO social links to entity social links
         Profile.SocialLinks socialLinks = null;
@@ -91,6 +95,30 @@ public class ProfileServiceImpl implements ProfileService {
         user.setIsProfileCompleted(true);
         userRepository.save(user);
         log.info("Updated profile completion status for user ID: {}", userId);
+
+        // Notify wishlist requesters for any skills provided at creation
+        // (case-insensitive, unique)
+        if (request.getSkillsToTeach() != null && !request.getSkillsToTeach().isEmpty()) {
+            Set<String> seen = new HashSet<>();
+            for (var dto : request.getSkillsToTeach()) {
+                if (dto == null || dto.getSkillName() == null)
+                    continue;
+                String raw = dto.getSkillName().trim();
+                if (raw.isEmpty())
+                    continue;
+                String norm = raw.toLowerCase();
+                // avoid duplicate notifications when same skill appears multiple times
+                if (seen.add(norm)) {
+                    try {
+                        wishlistService.notifyWhenProviderAdded(raw, userId);
+                        log.debug("Notified wishlist requesters for created profile: user={}, skill={}", userId, raw);
+                    } catch (Exception ex) {
+                        log.error("Failed to notify wishlist requesters on profile creation for skill '{}' user {}: {}",
+                                raw, userId, ex.getMessage(), ex);
+                    }
+                }
+            }
+        }
 
         // Convert to DTO and return
         return ProfileDTO.fromProfile(savedProfile, user.getFullName(), user.getEmail());
@@ -153,7 +181,6 @@ public class ProfileServiceImpl implements ProfileService {
                 .collect(Collectors.toList());
     }
 
-
     @Override
     public List<ProfileDTO> getProfilesBySkill(String skillName) {
         log.info("Fetching profiles by skill (starts-with, case-insensitive): {}", skillName);
@@ -214,14 +241,51 @@ public class ProfileServiceImpl implements ProfileService {
                     return new ProfileNotFoundException("Profile not found for user ID: " + userId);
                 });
 
-        // Compute currently taught skill names
+        // --- normalize existing skills (lowercase trimmed) for comparison ---
         List<String> oldSkills = profile.getSkillsToTeach() == null
                 ? List.of()
                 : profile.getSkillsToTeach().stream()
+                        .map(Profile.SkillToTeach::getSkillName)
+                        .filter(Objects::nonNull)
+                        .map(String::trim)
+                        .filter(s -> !s.isEmpty())
+                        .collect(Collectors.toList());
+
+        Set<String> oldNormalized = oldSkills.stream()
+                .map(String::toLowerCase)
+                .collect(Collectors.toSet());
+
+        // --- build incoming skill list (trimmed) and a map norm -> original ---
+        List<Profile.SkillToTeach> skillsToTeach = request.getSkillsToTeach() == null
+                ? List.of()
+                : request.getSkillsToTeach().stream()
+                        .map(dto -> Profile.SkillToTeach.builder()
+                                .skillName(dto.getSkillName())
+                                .proficiency(dto.getProficiency())
+                                .yearsOfExperience(dto.getYearsOfExperience())
+                                .build())
+                        .collect(Collectors.toList());
+
+        List<String> newSkillList = skillsToTeach.stream()
                 .map(Profile.SkillToTeach::getSkillName)
-                .map(s -> s == null ? "" : s.trim())
+                .filter(Objects::nonNull)
+                .map(String::trim)
                 .filter(s -> !s.isEmpty())
                 .collect(Collectors.toList());
+
+        // normalize incoming and map normalized -> first original casing
+        Map<String, String> normToOriginal = new HashMap<>();
+        Set<String> newNormalized = newSkillList.stream()
+                .map(s -> {
+                    String n = s.toLowerCase();
+                    normToOriginal.putIfAbsent(n, s); // keep first original form
+                    return n;
+                })
+                .collect(Collectors.toSet());
+
+        // compute added = newNormalized - oldNormalized (case-insensitive)
+        Set<String> addedNormalized = new HashSet<>(newNormalized);
+        addedNormalized.removeAll(oldNormalized);
 
         // Update basic fields
         profile.setProfilePicture(request.getProfilePicture());
@@ -230,25 +294,8 @@ public class ProfileServiceImpl implements ProfileService {
         profile.setBio(request.getBio());
         profile.setPhoneNumber(request.getPhoneNumber());
 
-        // Update skills to teach
-        List<Profile.SkillToTeach> skillsToTeach = request.getSkillsToTeach().stream()
-                .map(dto -> Profile.SkillToTeach.builder()
-                        .skillName(dto.getSkillName())
-                        .proficiency(dto.getProficiency())
-                        .yearsOfExperience(dto.getYearsOfExperience())
-                        .build())
-                .collect(Collectors.toList());
+        // Update skills to teach (we already constructed skillsToTeach above)
         profile.setSkillsToTeach(skillsToTeach);
-
-        // Compute newly added skills
-        List<String> newSkills = skillsToTeach.stream()
-                .map(Profile.SkillToTeach::getSkillName)
-                .map(s -> s == null ? "" : s.trim())
-                .filter(s -> !s.isEmpty())
-                .collect(Collectors.toList());
-
-        Set<String> addedSkills = new HashSet<>(newSkills);
-        addedSkills.removeAll(oldSkills); // only keep newly added
 
         // Update skills to learn
         profile.setSkillsToLearn(request.getSkillsToLearn());
@@ -267,15 +314,20 @@ public class ProfileServiceImpl implements ProfileService {
         Profile updatedProfile = profileRepository.save(profile);
         log.info("Profile updated successfully for user ID: {}", userId);
 
-        // If provider added new skills, notify wishlist requesters for those skills
-        if (!addedSkills.isEmpty()) {
-            for (String skill : addedSkills) {
+        // Notify wishlist requesters for newly added skills (preserve original casing)
+        if (!addedNormalized.isEmpty()) {
+            for (String normSkill : addedNormalized) {
+                String originalSkill = normToOriginal.getOrDefault(normSkill, normSkill);
                 try {
-                    wishlistService.notifyWhenProviderAdded(skill, userId);
+                    wishlistService.notifyWhenProviderAdded(originalSkill, userId);
+                    log.info("Notified wishlist requesters: user={} added skill='{}'", userId, originalSkill);
                 } catch (Exception ex) {
-                    log.error("Failed to notify wishlist requesters for skill {} by provider {}", skill, userId, ex);
+                    log.error("Failed to notify wishlist requesters for skill '{}' by provider {}: {}", originalSkill,
+                            userId, ex.getMessage(), ex);
                 }
             }
+        } else {
+            log.debug("No new skills to notify for user {}", userId);
         }
 
         // Get user info
