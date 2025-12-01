@@ -50,7 +50,7 @@ public class CollaborationServiceImpl implements CollaborationService {
             if (!userId.equals(creatorUserId)) {
                 notificationService.send(
                         userId,
-                        NotificationType.CONNECT.name()+
+                        NotificationType.COLLAB,
                         "A new collaboration post has been created: " + post.getTitle(),
                         "/collaborations/" + savedPost.getId()
                 );
@@ -91,12 +91,10 @@ public class CollaborationServiceImpl implements CollaborationService {
         List<CollaborationApplication> apps = appRepo.findByPostId(postId);
         for (CollaborationApplication a : apps) {
             notificationService.send(
-    a.getApplicantId(),
-    NotificationType.CONNECT.name() 
-        + " - A collaboration post you applied for was deleted by the creator.",
-    "/collaborations/" + postId
-
-
+                    a.getApplicantId(),
+                    NotificationType.COLLAB,
+                    "A collaboration post you applied for was deleted by the creator.",
+                    "/collaborations/" + postId
             );
         }
 
@@ -129,12 +127,11 @@ public class CollaborationServiceImpl implements CollaborationService {
         String applicantName = applicant != null ? applicant.getFullName() : "Someone";
 
         notificationService.send(
-    post.getCreatedBy(),
-    NotificationType.NEW_REQUEST.name() + " - " 
-        + applicantName + " applied to your collaboration post: " + post.getTitle(),
-    "/collaborations/" + post.getId()
-);
-
+                post.getCreatedBy(),
+                NotificationType.NEW_REQUEST,
+                applicantName + " applied to your collaboration post: " + post.getTitle(),
+                "/collaborations/" + post.getId()
+        );
 
         return savedApp;
     }
@@ -160,17 +157,14 @@ public class CollaborationServiceImpl implements CollaborationService {
         app.setRespondedAt(LocalDateTime.now());
         CollaborationApplication savedApp = appRepo.save(app);
 
-        NotificationType type = accept ? NotificationType.REQUEST_ACCEPTED : NotificationType.REQUEST_REJECTED;
+        NotificationType type = accept ? NotificationType.ACCEPTED : NotificationType.REJECTED;
         notificationService.send(
-    app.getApplicantId(),
-    type.name() + " - " + (
-        accept
-            ? "Your application to '" + post.getTitle() + "' was accepted."
-            : "Your application to '" + post.getTitle() + "' was rejected by the post creator."
-    ),
-    "/collaborations/" + post.getId()
-);
-
+                app.getApplicantId(),
+                type,
+                accept ? "Your application to '" + post.getTitle() + "' was accepted."
+                       : "Your application to '" + post.getTitle() + "' was rejected by the post creator.",
+                "/collaborations/" + post.getId()
+        );
 
         if (accept) {
             post.setStatus("FILLED");
@@ -191,7 +185,7 @@ public class CollaborationServiceImpl implements CollaborationService {
         for (CollaborationApplication a : apps) {
             notificationService.send(
                     a.getApplicantId(),
-                    NotificationType.CONNECT.name()+
+                    NotificationType.COLLAB,
                     "The collaboration post you applied for has been closed by the creator.",
                     "/collaborations/" + postId
             );

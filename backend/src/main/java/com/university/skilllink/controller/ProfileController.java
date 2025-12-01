@@ -2,9 +2,8 @@ package com.university.skilllink.controller;
 
 import com.university.skilllink.dto.profile.CreateProfileRequest;
 import com.university.skilllink.dto.profile.ProfileDTO;
-import com.university.skilllink.service.ProfileService; // ← Import interface
+import com.university.skilllink.service.ProfileService;
 import com.university.skilllink.service.UserService;
-
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -24,8 +23,7 @@ import java.util.Map;
 public class ProfileController {
 
     private final ProfileService profileService;
-      private final UserService userService;
-    // ← Inject interface, not implementation
+    private final UserService userService;
 
     /**
      * Create profile for current user
@@ -35,9 +33,8 @@ public class ProfileController {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String email = authentication.getName();
 
-        // TODO: Get userId from email via UserService
-        // For now, you'll need to add a method to get userId from email
-         String userId = userService.getUserByEmail(email).getId();
+        // Resolve userId from email via UserService
+        String userId = userService.getUserByEmail(email).getId();
 
         ProfileDTO profile = profileService.createProfile(userId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(profile);
@@ -53,46 +50,56 @@ public class ProfileController {
     }
 
     /**
-     * Get all profiles (for dashboard)
+     * Combined endpoint for filtering / listing profiles.
+     *
+     * Query params:
+     *  - department (optional)
+     *  - year       (optional)  integer
+     *  - skill      (optional)  prefix search (starts-with, case-insensitive)
+     *
+     * Examples:
+     *  GET /api/profiles?skill=El
+     *  GET /api/profiles?department=Electronics&year=3
+     *  GET /api/profiles?year=2
+     *  GET /api/profiles     -> returns all
      */
     @GetMapping
-    public ResponseEntity<List<ProfileDTO>> getAllProfiles() {
-        List<ProfileDTO> profiles = profileService.getAllProfiles();
-        return ResponseEntity.ok(profiles);
-    }
-
-    /**
-     * Filter profiles by department
-     */
-    @GetMapping("/department/{department}")
-    public ResponseEntity<List<ProfileDTO>> getProfilesByDepartment(@PathVariable String department) {
-        List<ProfileDTO> profiles = profileService.getProfilesByDepartment(department);
-        return ResponseEntity.ok(profiles);
-    }
-
-    /**
-     * Filter profiles by skill
-     */
-    @GetMapping("/skill/{skillName}")
-    public ResponseEntity<List<ProfileDTO>> getProfilesBySkill(@PathVariable String skillName) {
-        List<ProfileDTO> profiles = profileService.getProfilesBySkill(skillName);
-        return ResponseEntity.ok(profiles);
-    }
-
-    /**
-     * Filter profiles by year
-     */
-    @GetMapping("/filter")
-    public ResponseEntity<List<ProfileDTO>> getProfilesByDepartmentAndYear(
-            @RequestParam String department,
-            @RequestParam Integer year
+    public ResponseEntity<List<ProfileDTO>> getProfiles(
+            @RequestParam(value = "department", required = false) String department,
+            @RequestParam(value = "year", required = false) Integer year,
+            @RequestParam(value = "skill", required = false) String skill
     ) {
-        List<ProfileDTO> profiles = profileService.getProfilesByDepartmentAndYear(department, year);
-        return ResponseEntity.ok(profiles);
+        // skill search takes priority (prefix search)
+        if (skill != null && !skill.trim().isEmpty()) {
+            List<ProfileDTO> results = profileService.getProfilesBySkillPrefix(skill.trim());
+            return ResponseEntity.ok(results);
+        }
+
+        // both department and year present
+        if (department != null && !department.trim().isEmpty() && year != null) {
+            List<ProfileDTO> results = profileService.getProfilesByDepartmentAndYear(department.trim(), year);
+            return ResponseEntity.ok(results);
+        }
+
+        // only department present
+        if (department != null && !department.trim().isEmpty()) {
+            List<ProfileDTO> results = profileService.getProfilesByDepartment(department.trim());
+            return ResponseEntity.ok(results);
+        }
+
+        // only year present
+        if (year != null) {
+            List<ProfileDTO> results = profileService.getProfilesByYear(year);
+            return ResponseEntity.ok(results);
+        }
+
+        // no filters -> all
+        List<ProfileDTO> results = profileService.getAllProfiles();
+        return ResponseEntity.ok(results);
     }
 
     /**
-     * Update profile for current user
+     * Update profile for a user (by userId)
      */
     @PutMapping("/{userId}")
     public ResponseEntity<ProfileDTO> updateProfile(

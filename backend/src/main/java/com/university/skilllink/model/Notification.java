@@ -5,6 +5,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 
 @Document(collection = "notifications")
 @Getter
@@ -20,26 +21,22 @@ public class Notification {
     // The user who will receive the notification
     private String userId;
 
-    // Type of notification (for categorizing or filtering)
+    // Type of notification (enum defined in NotificationType.java)
     private NotificationType type;
 
-    // Notification message content
-    private String content;
+    // Short title for the notification
+    private String title;
 
-    // Link to navigate when notification is clicked
-    private String link;
+    // Notification message content
+    private String message;
+
+    // Optional metadata (providerId, skillName, requestId, etc.)
+    private Map<String, String> metadata;
 
     // Read/unread status
-    private boolean read;
+    @Builder.Default
+    private Boolean read = false;
 
     // Timestamp when notification was created
     private LocalDateTime createdAt;
-
-    // Enum for notification types
-    public enum NotificationType {
-        COLLAB,        // New collaboration post created
-        NEW_REQUEST,   // Someone applied to your post
-        ACCEPTED,      // Your application was accepted
-        REJECTED       // Your application was rejected
-    }
 }

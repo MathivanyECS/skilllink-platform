@@ -59,6 +59,9 @@ public interface ProfileService {
      */
     List<ProfileDTO> getProfilesByDepartmentAndYear(String department, Integer yearOfStudy);
 
+    List<ProfileDTO> getProfilesByYear(Integer year);
+    List<ProfileDTO> getProfilesBySkillPrefix(String prefix);
+
     /**
      * Update existing profile
      *
