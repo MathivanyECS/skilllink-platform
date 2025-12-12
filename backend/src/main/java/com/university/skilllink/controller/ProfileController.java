@@ -19,7 +19,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/profiles")
 @RequiredArgsConstructor
-@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:5173"})
+@CrossOrigin(origins = { "http://localhost:3000", "http://localhost:5173" })
 public class ProfileController {
 
     private final ProfileService profileService;
@@ -53,22 +53,21 @@ public class ProfileController {
      * Combined endpoint for filtering / listing profiles.
      *
      * Query params:
-     *  - department (optional)
-     *  - year       (optional)  integer
-     *  - skill      (optional)  prefix search (starts-with, case-insensitive)
+     * - department (optional)
+     * - year (optional) integer
+     * - skill (optional) prefix search (starts-with, case-insensitive)
      *
      * Examples:
-     *  GET /api/profiles?skill=El
-     *  GET /api/profiles?department=Electronics&year=3
-     *  GET /api/profiles?year=2
-     *  GET /api/profiles     -> returns all
+     * GET /api/profiles?skill=El
+     * GET /api/profiles?department=Electronics&year=3
+     * GET /api/profiles?year=2
+     * GET /api/profiles -> returns all
      */
     @GetMapping
     public ResponseEntity<List<ProfileDTO>> getProfiles(
             @RequestParam(value = "department", required = false) String department,
             @RequestParam(value = "year", required = false) Integer year,
-            @RequestParam(value = "skill", required = false) String skill
-    ) {
+            @RequestParam(value = "skill", required = false) String skill) {
         // skill search takes priority (prefix search)
         if (skill != null && !skill.trim().isEmpty()) {
             List<ProfileDTO> results = profileService.getProfilesBySkillPrefix(skill.trim());
@@ -104,8 +103,7 @@ public class ProfileController {
     @PutMapping("/{userId}")
     public ResponseEntity<ProfileDTO> updateProfile(
             @PathVariable String userId,
-            @Valid @RequestBody CreateProfileRequest request
-    ) {
+            @Valid @RequestBody CreateProfileRequest request) {
         ProfileDTO profile = profileService.updateProfile(userId, request);
         return ResponseEntity.ok(profile);
     }

@@ -16,7 +16,7 @@ public interface ProfileRepository extends MongoRepository<Profile, String> {
     Boolean existsByUserId(String userId);
 
     // Find profiles by department (for filtering)
-    List<Profile> findByDepartment(String department);
+    List<Profile> findByDepartmentRegex(String regex);
 
     // Find profiles by year of study (for filtering)
     List<Profile> findByYearOfStudy(Integer yearOfStudy);
@@ -24,8 +24,6 @@ public interface ProfileRepository extends MongoRepository<Profile, String> {
     // Find profiles that teach specific skill (exact match)
     List<Profile> findBySkillsToTeachSkillName(String skillName);
 
-    
-    
     @Query("{ 'skillsToTeach.skillName': { $regex: ?0, $options: 'i' } }")
     List<Profile> findBySkillsToTeachSkillNameRegex(String regex);
 
