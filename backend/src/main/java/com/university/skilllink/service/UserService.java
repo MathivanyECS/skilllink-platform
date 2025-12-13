@@ -3,6 +3,7 @@ package com.university.skilllink.service;
 import com.university.skilllink.dto.auth.UserDTO;
 import com.university.skilllink.dto.profile.OfferedSkillDTO;
 import com.university.skilllink.dto.admin.ActiveUserDTO;
+import com.university.skilllink.dto.admin.SkillDemandDTO;
 
 import java.util.List;
 
@@ -48,4 +49,8 @@ public interface UserService {
 
     // New method for detailed active users
     List<ActiveUserDTO> getAllActiveUsers();
+
+    //Skill Demand Report
+    List<SkillDemandDTO> getSkillDemandReport();
+
 }
