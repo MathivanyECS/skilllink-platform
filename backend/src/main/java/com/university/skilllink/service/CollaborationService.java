@@ -26,4 +26,9 @@ public interface CollaborationService {
     CollaborationApplication respondToApplication(String postId, String applicationId, String userId, boolean accept);
 
     CollaborationPost closePost(String postId, String userId);
+
+    List<CollabPostDTO> getAllPosts();  // returns all posts (for admin)
+    
+    void deletePostByAdmin(String postId); // admin can delete any post
+
 }
