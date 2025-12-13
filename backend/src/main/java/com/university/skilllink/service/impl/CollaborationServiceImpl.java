@@ -7,7 +7,6 @@ import com.university.skilllink.exception.ForbiddenException;
 import com.university.skilllink.exception.ResourceNotFoundException;
 import com.university.skilllink.model.CollaborationApplication;
 import com.university.skilllink.model.CollaborationPost;
-import com.university.skilllink.model.Notification;
 import com.university.skilllink.model.NotificationType;
 import com.university.skilllink.repository.CollaborationApplicationRepository;
 import com.university.skilllink.repository.CollaborationPostRepository;
@@ -50,8 +49,8 @@ public class CollaborationServiceImpl implements CollaborationService {
             if (!userId.equals(creatorUserId)) {
                 notificationService.send(
                         userId,
-                        NotificationType.CONNECT.name()+
-                        "A new collaboration post has been created: " + post.getTitle(),
+                        NotificationType.CONNECT.name() +
+                                "A new collaboration post has been created: " + post.getTitle(),
                         "/collaborations/" + savedPost.getId()
                 );
             }
@@ -68,35 +67,37 @@ public class CollaborationServiceImpl implements CollaborationService {
     @Override
     public CollaborationPost getPostById(String postId) {
         return postRepo.findById(postId)
-                .orElseThrow(() -> new ResourceNotFoundException("Collaboration post not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Collaboration post not found with id: " + postId));
     }
 
     @Override
     public CollaborationPost updatePost(String postId, String userId, CollabPostDTO dto) {
         CollaborationPost post = getPostById(postId);
-        if (!post.getCreatedBy().equals(userId)) throw new ForbiddenException("Only creator can edit post");
+        if (!post.getCreatedBy().equals(userId))
+            throw new ForbiddenException("Only creator can edit post");
+
         post.setTitle(dto.getTitle());
         post.setDescription(dto.getDescription());
         post.setCategory(dto.getCategory());
         post.setDuration(dto.getDuration());
         post.setRequiredSkills(dto.getRequiredSkills());
+
         return postRepo.save(post);
     }
 
     @Override
     public void deletePost(String postId, String userId) {
         CollaborationPost post = getPostById(postId);
-        if (!post.getCreatedBy().equals(userId)) throw new ForbiddenException("Only creator can delete post");
+        if (!post.getCreatedBy().equals(userId))
+            throw new ForbiddenException("Only creator can delete post");
 
         List<CollaborationApplication> apps = appRepo.findByPostId(postId);
         for (CollaborationApplication a : apps) {
             notificationService.send(
-    a.getApplicantId(),
-    NotificationType.CONNECT.name() 
-        + " - A collaboration post you applied for was deleted by the creator.",
-    "/collaborations/" + postId
-
-
+                    a.getApplicantId(),
+                    NotificationType.CONNECT.name()
+                            + " - A collaboration post you applied for was deleted by the creator.",
+                    "/collaborations/" + postId
             );
         }
 
@@ -107,11 +108,13 @@ public class CollaborationServiceImpl implements CollaborationService {
     @Override
     public CollaborationApplication applyToPost(String applicantUserId, String postId, CollabApplicationDTO dto) {
         CollaborationPost post = getPostById(postId);
-        if (!"OPEN".equals(post.getStatus())) throw new ForbiddenException("Post not open for applications");
+        if (!"OPEN".equals(post.getStatus()))
+            throw new ForbiddenException("Post not open for applications");
 
         boolean alreadyApplied = appRepo.findByPostId(postId).stream()
                 .anyMatch(a -> a.getApplicantId().equals(applicantUserId));
-        if (alreadyApplied) throw new ForbiddenException("You already applied to this post");
+        if (alreadyApplied)
+            throw new ForbiddenException("You already applied to this post");
 
         CollaborationApplication app = CollaborationApplication.builder()
                 .postId(postId)
@@ -129,12 +132,11 @@ public class CollaborationServiceImpl implements CollaborationService {
         String applicantName = applicant != null ? applicant.getFullName() : "Someone";
 
         notificationService.send(
-    post.getCreatedBy(),
-    NotificationType.NEW_REQUEST.name() + " - " 
-        + applicantName + " applied to your collaboration post: " + post.getTitle(),
-    "/collaborations/" + post.getId()
-);
-
+                post.getCreatedBy(),
+                NotificationType.NEW_REQUEST.name() + " - "
+                        + applicantName + " applied to your collaboration post: " + post.getTitle(),
+                "/collaborations/" + post.getId()
+        );
 
         return savedApp;
     }
@@ -142,35 +144,34 @@ public class CollaborationServiceImpl implements CollaborationService {
     @Override
     public List<CollaborationApplication> listApplications(String postId, String userId) {
         CollaborationPost post = getPostById(postId);
-        if (!post.getCreatedBy().equals(userId)) throw new ForbiddenException("Only creator can view applications");
+        if (!post.getCreatedBy().equals(userId))
+            throw new ForbiddenException("Only creator can view applications");
         return appRepo.findByPostId(postId);
     }
 
     @Override
     public CollaborationApplication respondToApplication(String postId, String applicationId, String userId, boolean accept) {
         CollaborationPost post = getPostById(postId);
-        if (!post.getCreatedBy().equals(userId)) throw new ForbiddenException("Only creator can respond");
+        if (!post.getCreatedBy().equals(userId))
+            throw new ForbiddenException("Only creator can respond");
 
         CollaborationApplication app = appRepo.findById(applicationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Application not found"));
 
-        if (!app.getPostId().equals(postId)) throw new ForbiddenException("Application does not belong to this post");
+        if (!app.getPostId().equals(postId))
+            throw new ForbiddenException("Application does not belong to this post");
 
         app.setStatus(accept ? CollaborationApplication.ApplicationStatus.ACCEPTED : CollaborationApplication.ApplicationStatus.REJECTED);
         app.setRespondedAt(LocalDateTime.now());
         CollaborationApplication savedApp = appRepo.save(app);
 
-        NotificationType type = accept ? NotificationType.REQUEST_ACCEPTED : NotificationType.REQUEST_REJECTED;
         notificationService.send(
-    app.getApplicantId(),
-    type.name() + " - " + (
-        accept
-            ? "Your application to '" + post.getTitle() + "' was accepted."
-            : "Your application to '" + post.getTitle() + "' was rejected by the post creator."
-    ),
-    "/collaborations/" + post.getId()
-);
-
+                app.getApplicantId(),
+                (accept ? NotificationType.REQUEST_ACCEPTED : NotificationType.REQUEST_REJECTED).name()
+                        + " - " + (accept ? "Your application to '" + post.getTitle() + "' was accepted."
+                        : "Your application to '" + post.getTitle() + "' was rejected by the post creator."),
+                "/collaborations/" + post.getId()
+        );
 
         if (accept) {
             post.setStatus("FILLED");
@@ -183,7 +184,8 @@ public class CollaborationServiceImpl implements CollaborationService {
     @Override
     public CollaborationPost closePost(String postId, String userId) {
         CollaborationPost post = getPostById(postId);
-        if (!post.getCreatedBy().equals(userId)) throw new ForbiddenException("Only creator can close post");
+        if (!post.getCreatedBy().equals(userId))
+            throw new ForbiddenException("Only creator can close post");
 
         post.setStatus("CLOSED");
 
@@ -191,12 +193,40 @@ public class CollaborationServiceImpl implements CollaborationService {
         for (CollaborationApplication a : apps) {
             notificationService.send(
                     a.getApplicantId(),
-                    NotificationType.CONNECT.name()+
-                    "The collaboration post you applied for has been closed by the creator.",
+                    NotificationType.CONNECT.name() +
+                            "The collaboration post you applied for has been closed by the creator.",
                     "/collaborations/" + postId
             );
         }
 
         return postRepo.save(post);
+    }
+
+    // ---------------- ADMIN FUNCTIONS ----------------
+
+    @Override
+    public List<CollabPostDTO> getAllPosts() {
+        return postRepo.findAll()
+                .stream()
+                .map(CollabPostDTO::new) // requires constructor CollabPostDTO(CollaborationPost)
+                .toList();
+    }
+
+    @Override
+    public void deletePostByAdmin(String postId) {
+        CollaborationPost post = postRepo.findById(postId)
+                .orElseThrow(() -> new ResourceNotFoundException("Collaboration post not found with id: " + postId));
+
+        // Notify all applicants before deletion
+        List<CollaborationApplication> apps = appRepo.findByPostId(postId);
+        for (CollaborationApplication a : apps) {
+            notificationService.send(
+                    a.getApplicantId(),
+                    "Your collaboration application for post '" + post.getTitle() + "' has been deleted by admin.",
+                    "/collaborations/" + postId
+            );
+        }
+        appRepo.deleteAll(apps);
+        postRepo.delete(post);
     }
 }
