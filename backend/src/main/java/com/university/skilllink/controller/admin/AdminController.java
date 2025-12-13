@@ -5,10 +5,12 @@ import com.university.skilllink.dto.auth.RegisterRequest;
 import com.university.skilllink.dto.auth.UserDTO;
 import com.university.skilllink.dto.profile.OfferedSkillDTO;
 import com.university.skilllink.dto.admin.ActiveUserDTO;
-import com.university.skilllink.model.Notification;
+import com.university.skilllink.dto.collaboration.CollabPostDTO;
 import com.university.skilllink.service.AuthService;
+import com.university.skilllink.service.CollaborationService;
 import com.university.skilllink.service.NotificationService;
 import com.university.skilllink.service.UserService;
+import com.university.skilllink.model.Notification;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -23,6 +25,7 @@ public class AdminController {
     private final UserService userService;
     private final AuthService authService;
     private final NotificationService notificationService;
+    private final CollaborationService collaborationService;
 
     // -------- CREATE ADMIN --------
     @PostMapping("/create")
@@ -84,10 +87,22 @@ public class AdminController {
     }
 
     // --- ACTIVE USERS ---
-    // Updated to return detailed info instead of just IDs
     @GetMapping("/active-users")
     public ResponseEntity<List<ActiveUserDTO>> getAllActiveUsers() {
         List<ActiveUserDTO> users = userService.getAllActiveUsers();
         return ResponseEntity.ok(users);
+    }
+
+    // --- COLLABORATION POSTS MANAGEMENT (ADMIN) ---
+    @GetMapping("/collaboration-posts")
+    public ResponseEntity<List<CollabPostDTO>> getAllCollaborationPosts() {
+        List<CollabPostDTO> posts = collaborationService.getAllPosts(); // admin sees all posts
+        return ResponseEntity.ok(posts);
+    }
+
+    @DeleteMapping("/collaboration-posts/{id}")
+    public ResponseEntity<String> deleteCollaborationPost(@PathVariable("id") String postId) {
+        collaborationService.deletePostByAdmin(postId); // new admin delete method
+        return ResponseEntity.ok("Collaboration post deleted successfully by admin");
     }
 }
