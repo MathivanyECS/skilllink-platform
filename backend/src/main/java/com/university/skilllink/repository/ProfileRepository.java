@@ -54,4 +54,26 @@ public interface ProfileRepository extends MongoRepository<Profile, String> {
         long getDemandCount();
         String getProviderUserId();
     }
+
+    @Aggregation(pipeline = {
+    "{ $unwind: '$skillsToLearn' }",
+    "{ $group: { _id: '$skillsToLearn', demandCount: { $sum: 1 } } }",
+    "{ $lookup: { from: 'profiles', localField: '_id', foreignField: 'skillsToTeach.skillName', as: 'providers' } }",
+    "{ $project: { " +
+        "skillName: '$_id', " +
+        "demandCount: 1, " +
+        "providerCount: { $size: '$providers' }, " +
+        "gapScore: { $subtract: ['$demandCount', { $size: '$providers' }] } " +
+    "} }",
+    "{ $sort: { gapScore: -1 } }"
+    })
+
+    List<SkillGapAggregation> aggregateSkillGapReport();
+
+    interface SkillGapAggregation {
+    String getSkillName();
+    long getDemandCount();
+    long getProviderCount();
+    long getGapScore();
+    }
 }
