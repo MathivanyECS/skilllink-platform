@@ -11,6 +11,8 @@ import com.university.skilllink.service.RequestService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import org.springframework.web.client.RestTemplate;
+
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -24,6 +26,7 @@ public class SkillRequestServiceImpl implements RequestService {
     private final SkillRequestRepository skillRequestRepository;
     private final NotificationService notificationService;
     private final UserRepository userRepository;
+    private final RestTemplate restTemplate = new RestTemplate();
 
     @Override
     public SkillRequest sendRequest(String seekerId, String providerIdentifier, String skillName, String note) {
@@ -127,6 +130,24 @@ public class SkillRequestServiceImpl implements RequestService {
                 notifType = NotificationType.REQUEST_ACCEPTED;
                 title = "Request Accepted";
                 message = "Your request for '" + req.getSkillName() + "' was accepted.";
+                
+                // ✅ ADDED: CALL SESSION BOARD API
+                try {
+                    String url = "http://localhost:8088/api/session-boards/create-from-request";
+                    
+                    Map<String, String> sessionBoardRequest = new HashMap<>();
+                    sessionBoardRequest.put("requestId", req.getId());
+                    sessionBoardRequest.put("seekerId", req.getSeekerId());
+                    sessionBoardRequest.put("providerId", req.getProviderId());
+                    sessionBoardRequest.put("skillName", req.getSkillName());
+                    
+                    // Call Member 3's API
+                    restTemplate.postForObject(url, sessionBoardRequest, String.class);
+                    System.out.println("✅ Session board created for request: " + req.getId());
+                } catch (Exception e) {
+                    System.out.println("⚠️ Failed to create session board: " + e.getMessage());
+                    // Don't throw - request is still accepted
+                }
                 break;
 
             case REJECTED:
