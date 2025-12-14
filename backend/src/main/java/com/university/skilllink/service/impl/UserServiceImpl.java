@@ -4,6 +4,7 @@ import com.university.skilllink.dto.auth.UserDTO;
 import com.university.skilllink.dto.profile.OfferedSkillDTO;
 import com.university.skilllink.dto.admin.ActiveUserDTO;
 import com.university.skilllink.dto.admin.SkillDemandDTO;
+import com.university.skilllink.dto.admin.SkillGapReportDTO;
 import com.university.skilllink.dto.admin.TopSkillProviderDTO;
 import com.university.skilllink.exception.CustomExceptions.UserNotFoundException;
 import com.university.skilllink.model.Profile;
@@ -282,6 +283,20 @@ public List<TopSkillProviderDTO> getTopSkillProviders() {
             })
             .filter(dto -> dto != null)
             .sorted((a, b) -> Long.compare(b.getDemandCount(), a.getDemandCount()))
+            .toList();
+}
+
+    // ---------------- Skill Gap Report ----------------
+    @Override
+    public List<SkillGapReportDTO> getSkillGapReport() {
+    return profileRepository.aggregateSkillGapReport()
+            .stream()
+            .map(a -> new SkillGapReportDTO(
+                    a.getSkillName(),
+                    a.getDemandCount(),
+                    a.getProviderCount(),
+                    a.getGapScore()
+            ))
             .toList();
 }
 
