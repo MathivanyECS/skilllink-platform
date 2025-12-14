@@ -10,12 +10,8 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 import java.time.LocalDateTime;
 import java.util.List;
-/**
- * SessionBoardController - REST API endpoints for session board management
- * Handles CRUD operations for virtual classroom sessions
- * Secured with JWT authentication
- * Provides APIs for learners and teachers to manage sessions
- */
+import java.util.Map;
+
 
 @RestController
 @RequestMapping("/api/session-boards")
@@ -70,7 +66,47 @@ public class SessionBoardController {
             @RequestParam String progressNotes) {
         SessionBoardDTO sessionBoard = sessionBoardService.updateProgressNotes(id, progressNotes);
         return ResponseEntity.ok(sessionBoard);
+            }
+
+
+            // ✅ NEW ENDPOINT ADDED HERE - Called by Member 2 when request is accepted
+    @PostMapping("/create-from-request")
+    public ResponseEntity<SessionBoardDTO> createFromRequest(@RequestBody Map<String, String> requestData) {
+    // Extract data from Member 2
+    String requestId = requestData.get("requestId");
+    String seekerId = requestData.get("seekerId");
+    String providerId = requestData.get("providerId");
+    String skillName = requestData.get("skillName");
+    
+    // Validate required fields
+    if (requestId == null || seekerId == null || providerId == null) {
+        return ResponseEntity.badRequest().build();
     }
-     
+    
+    // Create session board DTO
+    CreateSessionBoardDTO createDTO = new CreateSessionBoardDTO();
+    createDTO.setSessionId(requestId);      // Use requestId as sessionId
+    createDTO.setLearnerId(seekerId);       // seekerId becomes learnerId
+    createDTO.setTeacherId(providerId);     // providerId becomes teacherId
+    
+    try {
+        // Create session board
+        SessionBoardDTO sessionBoard = sessionBoardService.createSessionBoard(createDTO);
+        
+        // Add skill name to progress notes
+        if (skillName != null && !skillName.isEmpty()) {
+            sessionBoardService.updateProgressNotes(
+                sessionBoard.getId(), 
+                "Learning session for: " + skillName
+            );
+        }
+        
+        System.out.println("✅ Session board created for request: " + requestId);
+        return ResponseEntity.ok(sessionBoard);
+    } catch (Exception e) {
+        System.out.println("❌ Failed to create session board: " + e.getMessage());
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+    }
+}
     
 }
