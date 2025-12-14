@@ -3,12 +3,15 @@ package com.university.skilllink.service.impl;
 import com.university.skilllink.dto.auth.UserDTO;
 import com.university.skilllink.dto.profile.OfferedSkillDTO;
 import com.university.skilllink.dto.admin.ActiveUserDTO;
+import com.university.skilllink.dto.admin.CollabStatsDTO;
 import com.university.skilllink.dto.admin.SkillDemandDTO;
 import com.university.skilllink.dto.admin.SkillGapReportDTO;
 import com.university.skilllink.dto.admin.TopSkillProviderDTO;
 import com.university.skilllink.exception.CustomExceptions.UserNotFoundException;
+import com.university.skilllink.model.CollaborationPost;
 import com.university.skilllink.model.Profile;
 import com.university.skilllink.model.User;
+import com.university.skilllink.repository.CollaborationPostRepository;
 import com.university.skilllink.repository.ProfileRepository;
 import com.university.skilllink.repository.UserRepository;
 import com.university.skilllink.service.UserService;
@@ -24,6 +27,7 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final ProfileRepository profileRepository;
+    private final CollaborationPostRepository collaborationPostRepository; // corrected repository
 
     // ---------------- User retrieval ----------------
 
@@ -225,11 +229,10 @@ public class UserServiceImpl implements UserService {
         userRepository.save(user);
     }
 
-    // ---------------- Skill Demand Report (FIXED) ----------------
+    // ---------------- Skill Demand Report ----------------
 
     @Override
     public List<SkillDemandDTO> getSkillDemandReport() {
-
         List<Profile> profiles = profileRepository.findAll();
         Map<String, Long> demandMap = new HashMap<>();
 
@@ -246,58 +249,73 @@ public class UserServiceImpl implements UserService {
                 .toList();
     }
 
+    // ---------------- Top Skill Providers ----------------
+
+    @Override
+    public List<TopSkillProviderDTO> getTopSkillProviders() {
+        List<ProfileRepository.SkillDemandAggregation> rawData =
+                profileRepository.aggregateTopSkillProviders();
+
+        return rawData.stream()
+                .map(row -> {
+                    User user = userRepository.findById(row.getProviderUserId()).orElse(null);
+                    if (user == null) return null;
+
+                    return new TopSkillProviderDTO(
+                            user.getId(),
+                            user.getFullName(),
+                            user.getEmail(),
+                            row.getSkillName(),
+                            row.getDemandCount()
+                    );
+                })
+                .filter(Objects::nonNull)
+                .sorted((a, b) -> Long.compare(b.getDemandCount(), a.getDemandCount()))
+                .toList();
+    }
+
+    // ---------------- Skill Gap Report ----------------
+
+    @Override
+    public List<SkillGapReportDTO> getSkillGapReport() {
+        return profileRepository.aggregateSkillGapReport()
+                .stream()
+                .map(a -> new SkillGapReportDTO(
+                        a.getSkillName(),
+                        a.getDemandCount(),
+                        a.getProviderCount(),
+                        a.getGapScore()
+                ))
+                .toList();
+    }
+
+    // ---------------- Collaboration Stats ----------------
+
+    @Override
+    public CollabStatsDTO getCollaborationStats() {
+        List<CollaborationPost> posts = collaborationPostRepository.findAll();
+
+        long totalPosts = posts.size();
+        long totalApplicants = posts.stream()
+                .mapToLong(p -> p.getApplicants().size())
+                .sum();
+        long completedCollaborations = posts.stream()
+                .filter(p -> "CLOSED".equalsIgnoreCase(p.getStatus()))
+                .count();
+
+        return new CollabStatsDTO(totalPosts, totalApplicants, completedCollaborations);
+    }
+
     // ---------------- Helpers ----------------
 
     private User findUserById(String userId) {
         return userRepository.findById(userId)
-                .orElseThrow(() ->
-                        new UserNotFoundException("User not found with ID: " + userId));
+                .orElseThrow(() -> new UserNotFoundException("User not found with ID: " + userId));
     }
 
     private Profile getProfile(String userId) {
         return profileRepository.findByUserId(userId)
-                .orElseThrow(() ->
-                        new UserNotFoundException("Profile not found for user: " + userId));
+                .orElseThrow(() -> new UserNotFoundException("Profile not found for user: " + userId));
     }
-
-    @Override
-public List<TopSkillProviderDTO> getTopSkillProviders() {
-
-    List<ProfileRepository.SkillDemandAggregation> rawData =
-            profileRepository.aggregateTopSkillProviders();
-
-    return rawData.stream()
-            .map(row -> {
-                User user = userRepository.findById(row.getProviderUserId())
-                        .orElse(null);
-
-                if (user == null) return null;
-
-                return new TopSkillProviderDTO(
-                        user.getId(),
-                        user.getFullName(),
-                        user.getEmail(),
-                        row.getSkillName(),
-                        row.getDemandCount()
-                );
-            })
-            .filter(dto -> dto != null)
-            .sorted((a, b) -> Long.compare(b.getDemandCount(), a.getDemandCount()))
-            .toList();
-}
-
-    // ---------------- Skill Gap Report ----------------
-    @Override
-    public List<SkillGapReportDTO> getSkillGapReport() {
-    return profileRepository.aggregateSkillGapReport()
-            .stream()
-            .map(a -> new SkillGapReportDTO(
-                    a.getSkillName(),
-                    a.getDemandCount(),
-                    a.getProviderCount(),
-                    a.getGapScore()
-            ))
-            .toList();
-}
 
 }
