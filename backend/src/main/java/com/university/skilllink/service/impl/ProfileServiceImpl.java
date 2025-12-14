@@ -3,6 +3,7 @@ package com.university.skilllink.service.impl;
 import java.util.Map;
 import java.util.Objects;
 import java.util.regex.Pattern; // if not already present at top of file
+import java.util.Collections;
 
 import com.university.skilllink.dto.profile.CreateProfileRequest;
 import com.university.skilllink.dto.profile.ProfileDTO;
@@ -164,20 +165,37 @@ public class ProfileServiceImpl implements ProfileService {
 
     @Override
     public List<ProfileDTO> getProfilesByDepartment(String department) {
-        log.info("Fetching profiles by department: {}", department);
+        log.info("Fetching profiles by department (case-insensitive): {}", department);
 
-        List<Profile> profiles = profileRepository.findByDepartment(department);
-        log.info("Found {} profiles in department: {}", profiles.size(), department);
+        if (department == null || department.trim().isEmpty()) {
+            log.warn("Department search string is empty");
+            return Collections.emptyList();
+        }
+
+        // Escape any regex special characters for safety
+        String safe = Pattern.quote(department.trim());
+
+        // Build regex to match ANYWHERE in the text, case-insensitive
+        String regex = "(?i).*" + safe + ".*";
+
+        // Use the new regex repository method
+        List<Profile> profiles = profileRepository.findByDepartmentRegex(regex);
+        log.info("Found {} profiles matching department filter: {}", profiles.size(), department);
 
         return profiles.stream()
                 .map(profile -> {
+                    // Fetch user linked to profile
                     User user = userRepository.findById(profile.getUserId()).orElse(null);
-                    if (user != null && user.getIsActive()) {
-                        return ProfileDTO.fromProfile(profile, user.getFullName(), user.getEmail());
+                    if (user != null && Boolean.TRUE.equals(user.getIsActive())) {
+                        // Convert to DTO (same as your existing code)
+                        return ProfileDTO.fromProfile(
+                                profile,
+                                user.getFullName(),
+                                user.getEmail());
                     }
                     return null;
                 })
-                .filter(dto -> dto != null)
+                .filter(Objects::nonNull)
                 .collect(Collectors.toList());
     }
 
