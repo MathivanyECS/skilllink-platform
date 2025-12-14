@@ -4,6 +4,7 @@ import com.university.skilllink.dto.auth.UserDTO;
 import com.university.skilllink.dto.profile.OfferedSkillDTO;
 import com.university.skilllink.dto.admin.ActiveUserDTO;
 import com.university.skilllink.dto.admin.SkillDemandDTO;
+import com.university.skilllink.dto.admin.TopSkillProviderDTO;
 import com.university.skilllink.exception.CustomExceptions.UserNotFoundException;
 import com.university.skilllink.model.Profile;
 import com.university.skilllink.model.User;
@@ -257,4 +258,31 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() ->
                         new UserNotFoundException("Profile not found for user: " + userId));
     }
+
+    @Override
+public List<TopSkillProviderDTO> getTopSkillProviders() {
+
+    List<ProfileRepository.SkillDemandAggregation> rawData =
+            profileRepository.aggregateTopSkillProviders();
+
+    return rawData.stream()
+            .map(row -> {
+                User user = userRepository.findById(row.getProviderUserId())
+                        .orElse(null);
+
+                if (user == null) return null;
+
+                return new TopSkillProviderDTO(
+                        user.getId(),
+                        user.getFullName(),
+                        user.getEmail(),
+                        row.getSkillName(),
+                        row.getDemandCount()
+                );
+            })
+            .filter(dto -> dto != null)
+            .sorted((a, b) -> Long.compare(b.getDemandCount(), a.getDemandCount()))
+            .toList();
+}
+
 }
