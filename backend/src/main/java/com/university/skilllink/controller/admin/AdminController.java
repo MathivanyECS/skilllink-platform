@@ -5,6 +5,7 @@ import com.university.skilllink.dto.auth.RegisterRequest;
 import com.university.skilllink.dto.auth.UserDTO;
 import com.university.skilllink.dto.profile.OfferedSkillDTO;
 import com.university.skilllink.dto.admin.ActiveUserDTO;
+import com.university.skilllink.dto.admin.CollabStatsDTO;
 import com.university.skilllink.dto.admin.SkillGapReportDTO;
 import com.university.skilllink.dto.admin.TopSkillProviderDTO;
 import com.university.skilllink.dto.collaboration.CollabPostDTO;
@@ -118,6 +119,13 @@ public class AdminController {
     @GetMapping("/reports/skill-gap")
     public ResponseEntity<List<SkillGapReportDTO>> getSkillGapReport() {
     return ResponseEntity.ok(userService.getSkillGapReport());
+    }
+
+    //--- COLLABORATION STATS ---
+    @GetMapping("/reports/collaboration-stats")
+    public ResponseEntity<CollabStatsDTO> getCollaborationStats() {
+    CollabStatsDTO stats = userService.getCollaborationStats();
+    return ResponseEntity.ok(stats);
     }
 
 }
