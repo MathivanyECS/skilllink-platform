@@ -4,8 +4,8 @@ import com.university.skilllink.dto.auth.UserDTO;
 import com.university.skilllink.dto.profile.OfferedSkillDTO;
 import com.university.skilllink.dto.admin.ActiveUserDTO;
 import com.university.skilllink.dto.admin.SkillDemandDTO;
+import com.university.skilllink.dto.admin.SkillGapReportDTO;
 import com.university.skilllink.dto.admin.TopSkillProviderDTO; 
-
 import java.util.List;
 
 public interface UserService {
@@ -56,4 +56,8 @@ public interface UserService {
 
     // Top Skill Providers
     List<TopSkillProviderDTO> getTopSkillProviders();
+
+    // Skill Gap Report
+    List<SkillGapReportDTO> getSkillGapReport();
+
 }
