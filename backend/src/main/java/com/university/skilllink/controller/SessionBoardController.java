@@ -71,4 +71,6 @@ public class SessionBoardController {
         SessionBoardDTO sessionBoard = sessionBoardService.updateProgressNotes(id, progressNotes);
         return ResponseEntity.ok(sessionBoard);
     }
+     
+    
 }
