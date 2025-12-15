@@ -2,6 +2,8 @@ package com.university.skilllink.controller;
 
 import com.university.skilllink.dto.Review.ReviewDTO;
 import com.university.skilllink.dto.Review.CreateReviewRequest;
+import com.university.skilllink.model.User;
+import com.university.skilllink.repository.UserRepository;
 import com.university.skilllink.service.ReviewService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -19,15 +21,22 @@ import java.util.List;
 public class ReviewController {
     
     private final ReviewService reviewService;
+    private final UserRepository userRepository; // Added for email → ID conversion
     
     private String getCurrentUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        return authentication.getName();
+        String email = authentication.getName(); // This is email from JWT
+        
+        // Convert email to user ID
+        User user = userRepository.findByEmail(email)
+            .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
+        
+        return user.getId(); // Returns actual user ID, not email
     }
     
     @PostMapping
     public ResponseEntity<ReviewDTO> createReview(@Valid @RequestBody CreateReviewRequest request) {
-        String reviewerId = getCurrentUserId();
+        String reviewerId = getCurrentUserId(); // Now returns actual user ID
         ReviewDTO review = reviewService.createReview(request, reviewerId);
         return ResponseEntity.status(HttpStatus.CREATED).body(review);
     }
@@ -54,14 +63,14 @@ public class ReviewController {
     public ResponseEntity<ReviewDTO> updateReview(
             @PathVariable String reviewId,
             @Valid @RequestBody CreateReviewRequest request) {
-        String userId = getCurrentUserId();
+        String userId = getCurrentUserId(); // Now returns actual user ID
         ReviewDTO review = reviewService.updateReview(reviewId, request, userId);
         return ResponseEntity.ok(review);
     }
     
     @DeleteMapping("/{reviewId}")
     public ResponseEntity<Void> deleteReview(@PathVariable String reviewId) {
-        String userId = getCurrentUserId();
+        String userId = getCurrentUserId(); // Now returns actual user ID
         reviewService.deleteReview(reviewId, userId);
         return ResponseEntity.noContent().build();
     }
