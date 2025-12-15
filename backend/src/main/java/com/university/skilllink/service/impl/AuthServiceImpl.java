@@ -57,8 +57,7 @@ public class AuthServiceImpl implements AuthService {
                         .username(savedUser.getEmail())
                         .password(savedUser.getPassword())
                         .authorities("ROLE_" + savedUser.getRole().name())
-                        .build()
-        );
+                        .build());
 
         // Return response
         return new AuthResponse(token, UserDTO.fromUser(savedUser));
@@ -68,11 +67,10 @@ public class AuthServiceImpl implements AuthService {
     public AuthResponse login(LoginRequest request) {
         // Authenticate user
         try {
-             authenticationManager.authenticate(
+            authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
                             request.getEmail(),
-                            request.getPassword())
-            );
+                            request.getPassword()));
         } catch (Exception e) {
             throw new InvalidCredentialsException("Invalid email or password");
         }
@@ -80,7 +78,7 @@ public class AuthServiceImpl implements AuthService {
         // Find user
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
-        
+
         // Check if user is active
         if (!user.getIsActive()) {
             throw new AccountDeactivatedException("Your account has been deactivated. Please contact support.");
@@ -92,8 +90,7 @@ public class AuthServiceImpl implements AuthService {
                         .username(user.getEmail())
                         .password(user.getPassword())
                         .authorities("ROLE_" + user.getRole().name())
-                        .build()
-        );
+                        .build());
 
         // Return response
         return new AuthResponse(token, UserDTO.fromUser(user));
@@ -139,12 +136,12 @@ public class AuthServiceImpl implements AuthService {
     public void resetPassword(String token, String newPassword) {
         User user = userRepository.findByResetPasswordToken(token)
                 .orElseThrow(() -> new InvalidTokenException("Invalid or expired reset token"));
-        
+
         // Check if token is expired
-        if (user.getResetPasswordExpiry().isBefore(LocalDateTime.now())) { 
+        if (user.getResetPasswordExpiry().isBefore(LocalDateTime.now())) {
             throw new InvalidTokenException("Reset token has expired");
         }
-        
+
         // Update password
         user.setPassword(passwordEncoder.encode(newPassword));
         user.setResetPasswordToken(null);
