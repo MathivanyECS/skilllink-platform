@@ -11,28 +11,9 @@ import java.util.Optional;
  */
 
 public interface SessionBoardRepository extends MongoRepository<SessionBoard, String> {
-    /**
-     * Find session board by session ID
-     * @param sessionId The learning session ID
-     * @return Optional containing session board if found
-     */
+    
     Optional<SessionBoard> findBySessionId(String sessionId);
-    /**
-     * Find all session boards where user is learner
-     * @param learnerId The learner user ID
-     * @return List of session boards for the learner
-     */
-    List<SessionBoard> findByLearnerId(String learnerId);
-     /**
-     * Find all session boards where user is teacher
-     * @param teacherId The teacher user ID
-     * @return List of session boards for the teacher
-     */
+    List<SessionBoard> findByLearnerId(String learnerId); 
     List<SessionBoard> findByTeacherId(String teacherId);
-    /**
-     * Check if session board exists for given session ID
-     * @param sessionId The session ID to check
-     * @return true if session board exists
-     */
     boolean existsBySessionId(String sessionId);
 }
