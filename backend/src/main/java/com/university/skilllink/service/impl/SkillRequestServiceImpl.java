@@ -8,15 +8,16 @@ import com.university.skilllink.repository.SkillRequestRepository;
 import com.university.skilllink.repository.UserRepository;
 import com.university.skilllink.service.NotificationService;
 import com.university.skilllink.service.RequestService;
+import com.university.skilllink.service.SessionBoardService;
+import com.university.skilllink.dto.sessionboard.CreateSessionBoardDTO;
+import com.university.skilllink.dto.sessionboard.SessionBoardDTO;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.*;
 
-/**
- * Fixed: handles Optional<User> for all UserRepository lookup methods.
- */
 @Service
 @RequiredArgsConstructor
 public class SkillRequestServiceImpl implements RequestService {
@@ -24,6 +25,7 @@ public class SkillRequestServiceImpl implements RequestService {
     private final SkillRequestRepository skillRequestRepository;
     private final NotificationService notificationService;
     private final UserRepository userRepository;
+    private final SessionBoardService sessionBoardService;
 
     @Override
     public SkillRequest sendRequest(String seekerId, String providerIdentifier, String skillName, String note) {
@@ -76,11 +78,14 @@ public class SkillRequestServiceImpl implements RequestService {
 
     @Override
     public SkillRequest updateStatus(String requestId, String actorId, String status) {
-        // load request (throws if not found)
+        System.out.println("🎯 [DEBUG] updateStatus called");
+        System.out.println("🎯 [DEBUG] requestId: " + requestId);
+        System.out.println("🎯 [DEBUG] actorId: " + actorId);
+        System.out.println("🎯 [DEBUG] status param: " + status);
+
         SkillRequest req = skillRequestRepository.findById(requestId)
                 .orElseThrow(() -> new RuntimeException("Request not found: " + requestId));
 
-        // ---- load actor as Optional and handle safely ----
         Optional<User> actorOpt = userRepository.findById(actorId);
         if (actorOpt.isEmpty()) {
             throw new RuntimeException("Actor user not found: " + actorId);
@@ -90,7 +95,6 @@ public class SkillRequestServiceImpl implements RequestService {
         String actorStudentId = actor.getStudentId();
         String actorEmail = actor.getEmail();
 
-        // allow provider to be identified by canonical id, studentId, or email
         boolean okById = actorId != null && actorId.equals(req.getProviderId());
         boolean okByStudent = actorStudentId != null && actorStudentId.equals(req.getProviderId());
         boolean okByEmail = actorEmail != null && actorEmail.equals(req.getProviderId());
@@ -99,7 +103,6 @@ public class SkillRequestServiceImpl implements RequestService {
             throw new RuntimeException("Only the provider can change request status.");
         }
 
-        // validate status enum
         SkillRequest.RequestStatus newStatus;
         try {
             newStatus = SkillRequest.RequestStatus.valueOf(status.toUpperCase());
@@ -107,12 +110,10 @@ public class SkillRequestServiceImpl implements RequestService {
             throw new RuntimeException("Invalid status: " + status);
         }
 
-        // update request
         req.setStatus(newStatus);
         req.setUpdatedAt(LocalDateTime.now());
         SkillRequest updated = skillRequestRepository.save(req);
 
-        // create notification for seeker
         Map<String, String> meta = new HashMap<>();
         meta.put("requestId", req.getId());
         meta.put("providerId", req.getProviderId());
@@ -122,11 +123,37 @@ public class SkillRequestServiceImpl implements RequestService {
         String title;
         String message;
 
+        System.out.println("🎯 [DEBUG] New status: " + newStatus);
+
         switch (newStatus) {
             case ACCEPTED:
+                System.out.println("🔥 ACCEPTED CASE ENTERED");
+
                 notifType = NotificationType.REQUEST_ACCEPTED;
                 title = "Request Accepted";
                 message = "Your request for '" + req.getSkillName() + "' was accepted.";
+
+                try {
+                    // ✅ Directly create session board via service
+                    CreateSessionBoardDTO createDTO = new CreateSessionBoardDTO();
+                    createDTO.setSessionId(req.getId());
+                    createDTO.setLearnerId(req.getSeekerId());
+                    createDTO.setTeacherId(req.getProviderId());
+
+                    SessionBoardDTO sessionBoard = sessionBoardService.createSessionBoard(createDTO);
+
+                    if (req.getSkillName() != null && !req.getSkillName().isEmpty()) {
+                        sessionBoardService.updateProgressNotes(
+                                sessionBoard.getId(),
+                                "Learning session for: " + req.getSkillName()
+                        );
+                    }
+
+                    System.out.println("✅ Session board created for request: " + req.getId());
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
                 break;
 
             case REJECTED:
@@ -167,22 +194,15 @@ public class SkillRequestServiceImpl implements RequestService {
         return skillRequestRepository.findById(requestId);
     }
 
-    /**
-     * Tries to resolve providerIdentifier to canonical user id.
-     * Handles Optional<User> from userRepository for all lookup methods.
-     */
     private String resolveProviderId(String providerIdentifier) {
         if (providerIdentifier == null) return null;
 
-        // try primary id (returns Optional<User>)
         Optional<User> byId = userRepository.findById(providerIdentifier);
         if (byId.isPresent()) return byId.get().getId();
 
-        // try studentId (Optional<User>)
         Optional<User> byStudentOpt = userRepository.findByStudentId(providerIdentifier);
         if (byStudentOpt.isPresent()) return byStudentOpt.get().getId();
 
-        // try email (Optional<User>)
         Optional<User> byEmailOpt = userRepository.findByEmail(providerIdentifier);
         if (byEmailOpt.isPresent()) return byEmailOpt.get().getId();
 
