@@ -2,6 +2,8 @@ package com.university.skilllink.controller;
 
 import com.university.skilllink.dto.sessionboard.SessionBoardDTO;
 import com.university.skilllink.dto.sessionboard.CreateSessionBoardDTO;
+import com.university.skilllink.model.SkillRequest;
+import com.university.skilllink.repository.SkillRequestRepository;
 import com.university.skilllink.service.SessionBoardService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -12,7 +14,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
-
 @RestController
 @RequestMapping("/api/session-boards")
 @RequiredArgsConstructor
@@ -20,6 +21,7 @@ import java.util.Map;
 public class SessionBoardController {
     
     private final SessionBoardService sessionBoardService;
+    private final SkillRequestRepository skillRequestRepository; // Added for validation
     
     @PostMapping
     public ResponseEntity<SessionBoardDTO> createSessionBoard(@Valid @RequestBody CreateSessionBoardDTO request) {
@@ -66,47 +68,71 @@ public class SessionBoardController {
             @RequestParam String progressNotes) {
         SessionBoardDTO sessionBoard = sessionBoardService.updateProgressNotes(id, progressNotes);
         return ResponseEntity.ok(sessionBoard);
-            }
+    }
 
-
-            // ✅ NEW ENDPOINT ADDED HERE - Called by Member 2 when request is accepted
+    // ✅ UPDATED ENDPOINT WITH VALIDATION
     @PostMapping("/create-from-request")
     public ResponseEntity<SessionBoardDTO> createFromRequest(@RequestBody Map<String, String> requestData) {
-    // Extract data from Member 2
-    String requestId = requestData.get("requestId");
-    String seekerId = requestData.get("seekerId");
-    String providerId = requestData.get("providerId");
-    String skillName = requestData.get("skillName");
-    
-    // Validate required fields
-    if (requestId == null || seekerId == null || providerId == null) {
-        return ResponseEntity.badRequest().build();
-    }
-    
-    // Create session board DTO
-    CreateSessionBoardDTO createDTO = new CreateSessionBoardDTO();
-    createDTO.setSessionId(requestId);      // Use requestId as sessionId
-    createDTO.setLearnerId(seekerId);       // seekerId becomes learnerId
-    createDTO.setTeacherId(providerId);     // providerId becomes teacherId
-    
-    try {
-        // Create session board
-        SessionBoardDTO sessionBoard = sessionBoardService.createSessionBoard(createDTO);
+        // Extract data from Member 2
+        String requestId = requestData.get("requestId");
+        String seekerId = requestData.get("seekerId");
+        String providerId = requestData.get("providerId");
+        String skillName = requestData.get("skillName");
         
-        // Add skill name to progress notes
-        if (skillName != null && !skillName.isEmpty()) {
-            sessionBoardService.updateProgressNotes(
-                sessionBoard.getId(), 
-                "Learning session for: " + skillName
-            );
+        // Validate required fields
+        if (requestId == null || seekerId == null || providerId == null) {
+            return ResponseEntity.badRequest().body(null);
         }
         
-        System.out.println("✅ Session board created for request: " + requestId);
-        return ResponseEntity.ok(sessionBoard);
-    } catch (Exception e) {
-        System.out.println("❌ Failed to create session board: " + e.getMessage());
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        try {
+            // 1. VALIDATE: Check if request exists
+            SkillRequest skillRequest = skillRequestRepository.findById(requestId)
+                .orElseThrow(() -> new RuntimeException("Skill request not found with ID: " + requestId));
+            
+            // 2. VALIDATE: Check if request is ACCEPTED
+            if (skillRequest.getStatus() != SkillRequest.RequestStatus.ACCEPTED) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(null); // Or return error message
+            }
+            
+            // 3. VALIDATE: Check if IDs match
+            if (!skillRequest.getSeekerId().equals(seekerId) || 
+                !skillRequest.getProviderId().equals(providerId)) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(null); // IDs don't match the request
+            }
+            
+            // 4. Check if session board already exists for this request
+            // This check is already in SessionBoardServiceImpl.createSessionBoard()
+            
+            // 5. Create session board DTO
+            CreateSessionBoardDTO createDTO = new CreateSessionBoardDTO();
+            createDTO.setSessionId(requestId);      // Use requestId as sessionId
+            createDTO.setLearnerId(seekerId);       // seekerId becomes learnerId
+            createDTO.setTeacherId(providerId);     // providerId becomes teacherId
+            
+            // 6. Create session board
+            SessionBoardDTO sessionBoard = sessionBoardService.createSessionBoard(createDTO);
+            
+            // 7. Add skill name to progress notes
+            if (skillName != null && !skillName.isEmpty()) {
+                sessionBoardService.updateProgressNotes(
+                    sessionBoard.getId(), 
+                    "Learning session for: " + skillName
+                );
+            }
+            
+            System.out.println("✅ Session board created for ACCEPTED request: " + requestId);
+            return ResponseEntity.ok(sessionBoard);
+            
+        } catch (RuntimeException e) {
+            // Handle validation errors
+            System.out.println("❌ Validation failed: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+        } catch (Exception e) {
+            // Handle other errors
+            System.out.println("❌ Failed to create session board: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
     }
-}
-    
 }
