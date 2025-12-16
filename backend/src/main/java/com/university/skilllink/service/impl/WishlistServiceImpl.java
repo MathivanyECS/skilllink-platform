@@ -1,5 +1,6 @@
 package com.university.skilllink.service.impl;
 
+import com.university.skilllink.model.NotificationType;
 import com.university.skilllink.model.SkillWishlist;
 import com.university.skilllink.repository.SkillWishlistRepository;
 import com.university.skilllink.service.NotificationService;
@@ -48,7 +49,6 @@ public class WishlistServiceImpl implements WishlistService {
         }
 
         // Notify users about a new wanted skill (skill wishlist)
-        // send a general notification to everyone that a wishlist was created (type: WISHLIST_CREATED)
         Map<String, String> meta = new HashMap<>();
         meta.put("skillName", wishlist.getSkillName());
         meta.put("requesterId", requesterUserId);
@@ -61,7 +61,8 @@ public class WishlistServiceImpl implements WishlistService {
             message = "More people want to learn " + wishlist.getSkillName() + ".";
         }
 
-        notificationService.sendToAllUsers("WISHLIST_CREATED", title, message, meta);
+        // <-- pass NotificationType enum, not a String
+        notificationService.sendToAllUsers(NotificationType.WISHLIST_CREATED, title, message, meta);
     }
 
     @Override
@@ -80,11 +81,9 @@ public class WishlistServiceImpl implements WishlistService {
         String title = "Skill available: " + skillName;
         String message = "A provider just added " + skillName + " — you requested this skill. Please contact the provider or send a request.";
 
-        // Notify each requester individually
+        // Notify each requester individually using enum
         for (String userId : requesters) {
-            notificationService.sendToUser(userId, "WISHLIST_AVAILABLE", title, message, meta);
+            notificationService.sendToUser(userId, NotificationType.WISHLIST_AVAILABLE, title, message, meta);
         }
-
-        // Optionally: remove the wishlist or keep it (we keep it so others still see demand).
     }
 }

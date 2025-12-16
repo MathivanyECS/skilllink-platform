@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @Builder
@@ -23,6 +24,13 @@ public class UserDTO {
     private Boolean isActive;
     private LocalDateTime createdAt;
 
+    // SkillLink-specific fields
+    private List<String> offeredSkills;
+    private List<String> desiredSkills;
+    private List<Double> ratings;
+    private List<String> sessionIds;
+    private List<String> notifications;
+
     // Convert User entity to UserDTO
     public static UserDTO fromUser(User user) {
         return UserDTO.builder()
@@ -34,6 +42,11 @@ public class UserDTO {
                 .isProfileCompleted(user.getIsProfileCompleted())
                 .isActive(user.getIsActive())
                 .createdAt(user.getCreatedAt())
+                .offeredSkills(user.getOfferedSkills())
+                .desiredSkills(user.getDesiredSkills())
+                .ratings(user.getRatings())
+                .sessionIds(user.getSessionIds())
+                .notifications(user.getNotifications())
                 .build();
     }
 }
