@@ -30,26 +30,30 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(csrf -> csrf.disable())  // ✅ New lambda style
+            .csrf(csrf -> csrf.disable()) // Disable CSRF
             .authorizeHttpRequests(auth -> auth
                 // Public endpoints
                 .requestMatchers(
                     "/api/auth/register",
                     "/api/auth/login",
                     "/api/auth/forgot-password",
-                    "/api/auth/reset-password"
+                    "/api/auth/reset-password",
+                    "/api/admin/create" // TEMPORARY: Allow first admin creation
                 ).permitAll()
                 
-                // Admin endpoints
+                // Admin endpoints (all other /api/admin/** require ADMIN role)
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 
-                // All other endpoints require authentication
+                // Any other request requires authentication
                 .anyRequest().authenticated()
             )
+            // Stateless session (JWT)
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
+            // Authentication provider
             .authenticationProvider(authenticationProvider())
+            // JWT filter
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
@@ -58,8 +62,8 @@ public class SecurityConfig {
     @Bean
     public AuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
-        authProvider.setUserDetailsService(userDetailsService);  // ✅ This is correct
-        authProvider.setPasswordEncoder(passwordEncoder());  // ✅ This is correct
+        authProvider.setUserDetailsService(userDetailsService);
+        authProvider.setPasswordEncoder(passwordEncoder());
         return authProvider;
     }
 

@@ -81,13 +81,13 @@ public class Profile {
     public static class ProfileStatistics {
         @Builder.Default
         private Integer totalStudentsTaught = 0;
-        
+
         @Builder.Default
         private Integer totalSessionsCompleted = 0;
-        
+
         @Builder.Default
         private Double averageRating = 0.0;
-        
+
         @Builder.Default
         private Integer totalReviewsReceived = 0;
     }
