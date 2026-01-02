@@ -13,10 +13,16 @@ const Login = () => {
   const role = searchParams.get("role"); // "user" | "admin"
 
   const onSubmit = async (data: any) => {
+    setErrorMsg("");
+
+
     try {
       const res = await loginUser(data);
-      setErrorMsg("");
-      const user = res.user; 
+
+      const token = res.token;
+      const user = res.user;
+      // save token
+      localStorage.setItem("token", token);
 
       if (user.role === "ADMIN") {
         navigate("/admin-dashboard");
