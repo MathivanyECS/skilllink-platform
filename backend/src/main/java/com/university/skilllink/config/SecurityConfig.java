@@ -30,31 +30,32 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(csrf -> csrf.disable()) // Disable CSRF
-            .authorizeHttpRequests(auth -> auth
-                // Public endpoints
-                .requestMatchers(
-                    "/api/auth/register",
-                    "/api/auth/login",
-                    "/api/auth/forgot-password",
-                    "/api/auth/reset-password",
-                    "/api/admin/create" // TEMPORARY: Allow first admin creation
-                ).permitAll()
-                
-                // Admin endpoints (all other /api/admin/** require ADMIN role)
-                .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                
-                // Any other request requires authentication
-                .anyRequest().authenticated()
-            )
-            // Stateless session (JWT)
-            .sessionManagement(session -> session
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-            )
-            // Authentication provider
-            .authenticationProvider(authenticationProvider())
-            // JWT filter
-            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+                .cors(cors -> {})
+                .csrf(csrf -> csrf.disable()) // Disable CSRF
+                .authorizeHttpRequests(auth -> auth
+                        // Public endpoints
+                        .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers(
+                                "/api/auth/register",
+                                "/api/auth/login",
+                                "/api/auth/forgot-password",
+                                "/api/auth/reset-password",
+                                "/api/admin/create" // TEMPORARY: Allow first admin creation
+                        ).permitAll()
+
+                        // Admin endpoints (all other /api/admin/** require ADMIN role)
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
+
+                        // Any other request requires authentication
+                        .anyRequest().authenticated())
+                // Stateless session (JWT)
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                // Authentication provider
+                .authenticationProvider(authenticationProvider())
+                // JWT filter
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
@@ -68,7 +69,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) 
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration config)
             throws Exception {
         return config.getAuthenticationManager();
     }

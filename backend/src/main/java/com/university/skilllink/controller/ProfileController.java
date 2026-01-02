@@ -30,6 +30,7 @@ public class ProfileController {
      */
     @PostMapping
     public ResponseEntity<ProfileDTO> createProfile(@Valid @RequestBody CreateProfileRequest request) {
+        System.out.println("CREATE PROFILE HIT");
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String email = authentication.getName();
 
