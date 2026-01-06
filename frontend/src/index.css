@@ -1,3 +1,21 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+
+/* Force white placeholder text */
+input::placeholder {
+  color: #ffffff !important;
+  opacity: 1 !important;
+}
+
+/* For browser compatibility */
+input::-webkit-input-placeholder {
+  color: #ffffff !important;
+}
+input::-moz-placeholder {
+  color: #ffffff !important;
+}
+input:-ms-input-placeholder {
+  color: #ffffff !important;
+}
