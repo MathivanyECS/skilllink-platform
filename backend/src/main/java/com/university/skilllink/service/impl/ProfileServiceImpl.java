@@ -176,6 +176,7 @@ public class ProfileServiceImpl implements ProfileService {
 
         // Create DTO with reviews
         ProfileDTO profileDTO = ProfileDTO.fromProfile(profile, user.getFullName(), user.getEmail());
+        profileDTO.setStudentId(user.getStudentId());
         profileDTO.setReviews(reviews); // Add reviews to DTO
         profileDTO.setAverageRating(averageRating);
         profileDTO.setReviewCount(reviewCount);
