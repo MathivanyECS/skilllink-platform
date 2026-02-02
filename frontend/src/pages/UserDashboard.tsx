@@ -7,7 +7,7 @@ import NotificationDrawer from "../components/dashboard/NotificationDrawer";
 import WishlistModal from "../components/dashboard/WishlistModal";
 import WishlistSuccessModal from "../components/dashboard/WishlistSuccessModal";
 import RequestSkillModal from "../components/dashboard/RequestSkillModal";
-import ProfileViewModal from "../components/dashboard/ProfileViewModal"; // ✅ FIXED IMPORT
+import ProfileViewModal from "../components/dashboard/ProfileViewModal"; 
 
 interface Profile {
   userId: string;
@@ -34,6 +34,8 @@ const UserDashboard = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [showWishlist, setShowWishlist] = useState(false);
   const [showWishlistSuccess, setShowWishlistSuccess] = useState(false);
+
+  
 
   useEffect(() => {
     fetchProfiles();
@@ -87,7 +89,7 @@ const UserDashboard = () => {
         <div style={searchBox}>
           <FaSearch size={18} color="white" />
           <input
-            placeholder="Search by skill name"
+placeholder="Search skills you want to learn…"
             value={skill}
             onChange={e => setSkill(e.target.value)}
             style={searchInput}
@@ -257,27 +259,36 @@ const headerStyle = {
   display: "flex",
   justifyContent: "space-between",
   alignItems: "center",
-  padding: "18px 40px"
+  padding: "28px 48px",
+  minHeight: 120
 };
 
+
 const searchBox = {
-  background: GREEN,
-  padding: "10px 18px",
-  borderRadius: 8,
+  background: "#373434",
+  padding: "14px 22px",
+  borderRadius: 14,
   display: "flex",
   alignItems: "center",
-  width: 360
+  width: 520,
+  boxShadow: "0 0 0 1px #2f2f2f"
 };
+
 
 const searchInput = {
   backgroundColor: "transparent",
   border: "none",
   outline: "none",
-  color: "#FFFFFF",
-  marginLeft: 10,
+  color: "#f5f5f5",          // soft white
+  marginLeft: 12,
   width: "100%",
-  fontSize: 16
+  fontSize: 18,              // slightly bigger
+  fontWeight: 500,           // semi-bold
+  letterSpacing: "0.4px",    // premium feel
+  fontFamily: "Inter, Arial, sans-serif"
 };
+
+
 
 const panelStyle = {
   margin: "20px 40px",
@@ -287,12 +298,27 @@ const panelStyle = {
 };
 
 const selectStyle = {
-  background: "#4a4444",
-  color: "white",
+  background: "#3a3636",
+  color: "#f5f5f5",
   border: "none",
-  padding: "10px 14px",
-  borderRadius: 6
+  padding: "14px 52px 14px 18px",
+  borderRadius: 12,
+  fontSize: 16,
+  fontWeight: 500,
+  letterSpacing: "0.3px",
+  cursor: "pointer",
+
+  appearance: "none" as any,
+  WebkitAppearance: "none" as any,
+  MozAppearance: "none" as any,
+
+  backgroundImage:
+    "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='white'><path d='M6 9l6 6 6-6z'/></svg>\")",
+  backgroundRepeat: "no-repeat",
+  backgroundPosition: "right 18px center",
+  backgroundSize: "20px"
 };
+
 
 const clearStyle = {
   marginLeft: "auto",
