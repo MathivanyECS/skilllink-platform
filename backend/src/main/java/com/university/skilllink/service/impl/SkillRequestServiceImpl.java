@@ -53,7 +53,13 @@ public class SkillRequestServiceImpl implements RequestService {
         User seeker = userRepository.findById(seekerId)
                 .orElseThrow(() -> new RuntimeException("Seeker not found: " + seekerId));
 
-        // ✅ METADATA FOR PROVIDER NOTIFICATION
+        // ✅ FETCH PROVIDER USER (FOR SEEKER NOTIFICATION)
+        User provider = userRepository.findById(providerId)
+                .orElseThrow(() -> new RuntimeException("Provider not found: " + providerId));
+
+        // ======================================================
+        // 🔔 PROVIDER NOTIFICATION (NEW REQUEST)
+        // ======================================================
         Map<String, String> meta = new HashMap<>();
         meta.put("requestId", saved.getId());
         meta.put("skillName", skillName);
@@ -72,6 +78,15 @@ public class SkillRequestServiceImpl implements RequestService {
                 .build();
 
         notificationService.createNotification(notification);
+
+        // ======================================================
+        // 🔔 SEEKER NOTIFICATION (REQUEST SENT → PENDING)
+        // ======================================================
+        notificationService.sendRequestSentNotification(
+                seekerId,
+                skillName,
+                provider.getFullName());
+
         return saved;
     }
 
@@ -119,29 +134,21 @@ public class SkillRequestServiceImpl implements RequestService {
         SkillRequest updated = skillRequestRepository.save(req);
 
         // ======================================================
-        // ✅ FETCH PROVIDER USER (FOR SEEKER POPUP)
+        // 🔔 SEEKER NOTIFICATION (ACCEPT / REJECT)
         // ======================================================
         User provider = userRepository.findById(req.getProviderId()).orElse(null);
 
-        // ======================================================
-        // ✅ METADATA FOR SEEKER NOTIFICATION (FIXED)
-        // ======================================================
         Map<String, String> meta = new HashMap<>();
         meta.put("requestId", req.getId());
         meta.put("skillName", req.getSkillName());
-
-        // ✅ STATUS FOR UI
         meta.put("status", newStatus.name());
 
-        // ✅ PROVIDER DETAILS (STUDENT ID + FULL NAME)
-        meta.put(
-                "providerStudentId",
+        meta.put("providerStudentId",
                 provider != null && provider.getStudentId() != null
                         ? provider.getStudentId()
                         : "");
 
-        meta.put(
-                "providerName",
+        meta.put("providerName",
                 provider != null && provider.getFullName() != null
                         ? provider.getFullName()
                         : "");
@@ -192,7 +199,6 @@ public class SkillRequestServiceImpl implements RequestService {
                 .message(message)
                 .metadata(meta)
                 .createdAt(LocalDateTime.now())
-
                 .read(false)
                 .build();
 

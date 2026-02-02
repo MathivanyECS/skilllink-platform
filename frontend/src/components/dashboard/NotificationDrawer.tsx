@@ -27,7 +27,6 @@ const NotificationDrawer = ({ open, onClose, onUnreadCount }: Props) => {
     if (open) load();
   }, [open]);
 
-  // ✅ LOAD notifications
   const load = async () => {
     const res = await api.get("/notifications");
     setNotifications(res.data);
@@ -36,7 +35,6 @@ const NotificationDrawer = ({ open, onClose, onUnreadCount }: Props) => {
     onUnreadCount?.(unread);
   };
 
-  // ✅ MARK READ + REMOVE FROM UI
   const markReadAndRemove = async (id: string) => {
     await api.put(`/notifications/${id}/read`);
 
@@ -51,10 +49,8 @@ const NotificationDrawer = ({ open, onClose, onUnreadCount }: Props) => {
 
   return (
     <>
-      {/* OVERLAY */}
       <div style={overlay} onClick={onClose} />
 
-      {/* DRAWER */}
       <div style={drawer}>
         <h3>Notifications</h3>
 
@@ -67,38 +63,37 @@ const NotificationDrawer = ({ open, onClose, onUnreadCount }: Props) => {
             key={n.id}
             data={n}
             onClick={() => {
-              // ✅ OPEN DETAIL MODAL FOR ALL IMPORTANT TYPES
+              // ✅ OPEN MODAL (DO NOT REMOVE HERE)
               if (
                 n.type === "NEW_REQUEST" ||
-                n.type === "WISHLIST_CREATED" ||
+                n.type === "REQUEST_SENT" || // ✅ IMPORTANT
                 n.type === "REQUEST_ACCEPTED" ||
                 n.type === "REQUEST_REJECTED" ||
+                n.type === "WISHLIST_CREATED" ||
                 n.type === "WISHLIST_AVAILABLE"
               ) {
                 setSelected(n);
                 return;
               }
 
-              // fallback
               markReadAndRemove(n.id);
             }}
           />
         ))}
       </div>
 
-      {/* DETAIL MODAL */}
       <NotificationDetailModal
         open={!!selected}
         notification={selected}
         onClose={() => {
           if (selected) {
-            markReadAndRemove(selected.id); // ✅ mark read when closing
+            markReadAndRemove(selected.id); // ✅ remove only after close
           }
           setSelected(null);
         }}
         onUpdated={() => {
           if (selected) {
-            markReadAndRemove(selected.id); // ✅ accept / reject removes it
+            markReadAndRemove(selected.id);
           }
           setSelected(null);
         }}
@@ -106,8 +101,6 @@ const NotificationDrawer = ({ open, onClose, onUnreadCount }: Props) => {
     </>
   );
 };
-
-/* ================= STYLES ================= */
 
 const overlay = {
   position: "fixed" as const,
@@ -127,5 +120,7 @@ const drawer = {
   overflowY: "auto" as const,
   zIndex: 1001
 };
+
+
 
 export default NotificationDrawer;

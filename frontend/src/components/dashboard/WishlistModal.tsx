@@ -18,16 +18,11 @@ const WishlistModal = ({ open, onClose, onSuccess }: Props) => {
 
     try {
       setLoading(true);
-
-      await api.post("/wishlist", {
-        skillName
-      });
-
+      await api.post("/wishlist", { skillName });
       setSkillName("");
       onClose();
-      onSuccess(); // ✅ open success popup
-
-    } catch (err) {
+      onSuccess();
+    } catch {
       alert("Failed to add wishlist");
     } finally {
       setLoading(false);
@@ -37,9 +32,9 @@ const WishlistModal = ({ open, onClose, onSuccess }: Props) => {
   return (
     <div style={overlay}>
       <div style={modal}>
-        <h2>Add Skill to Wishlist</h2>
+        <h2 style={title}>Add Skill to Wishlist</h2>
 
-        <label style={{ marginTop: 16 }}>Skill Name</label>
+        <label style={label}>Skill Name</label>
         <input
           value={skillName}
           onChange={e => setSkillName(e.target.value)}
@@ -47,15 +42,15 @@ const WishlistModal = ({ open, onClose, onSuccess }: Props) => {
           placeholder="Enter skill name"
         />
 
-        <p style={{ opacity: 0.7, marginTop: 12 }}>
+        <p style={hint}>
           You will be notified when a provider adds this skill
         </p>
 
         <div style={actions}>
-          <button style={greenBtn} onClick={submit} disabled={loading}>
+          <button style={primaryBtn} onClick={submit} disabled={loading}>
             {loading ? "Adding..." : "Add to Wishlist"}
           </button>
-          <button style={grayBtn} onClick={onClose}>
+          <button style={secondaryBtn} onClick={onClose}>
             Cancel
           </button>
         </div>
@@ -64,11 +59,12 @@ const WishlistModal = ({ open, onClose, onSuccess }: Props) => {
   );
 };
 
-/* styles */
+/* ================= STYLES ================= */
+
 const overlay = {
   position: "fixed" as const,
   inset: 0,
-  background: "rgba(0,0,0,0.6)",
+  backgroundColor: "rgba(0,0,0,0.85)",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
@@ -76,45 +72,74 @@ const overlay = {
 };
 
 const modal = {
-  width: 420,
-  background: "#1f1f1f",
-  padding: 24,
+  width: 520,
+  backgroundColor: "#0f0f0f",
+  padding: "32px",
   borderRadius: 14,
-  color: "white",
-  boxShadow: "0 0 40px rgba(0,0,0,0.8)"
+
+  /* ✅ BORDER + SHADOW */
+  border: "1px solid rgba(47,191,113,0.35)",
+  boxShadow:
+    "0 25px 60px rgba(0,0,0,0.95), inset 0 1px 0 rgba(47,191,113,0.15)",
+
+  color: "#ffffff"
+};
+
+const title = {
+  margin: 0,
+  marginBottom: 24,
+  fontSize: 22,
+  fontWeight: 600
+};
+
+const label = {
+  fontSize: 14,
+  color: "#cccccc"
 };
 
 const input = {
   width: "100%",
-  padding: 12,
+  marginTop: 8,
+  padding: "12px 14px",
+  backgroundColor: "#1a1a1a",
+  border: "1px solid #2fbf71",
   borderRadius: 6,
-  border: "none",
-  background: "#4a4444",
-  color: "white",
-  marginTop: 8
+  color: "#ffffff",
+  fontSize: 14,
+  outline: "none"
+};
+
+const hint = {
+  marginTop: 12,
+  fontSize: 13,
+  color: "#9a9a9a"
 };
 
 const actions = {
   display: "flex",
-  justifyContent: "space-between",
-  marginTop: 24
+  justifyContent: "flex-end",
+  gap: 12,
+  marginTop: 28
 };
 
-const greenBtn = {
-  background: "#38AE56",
-  color: "white",
+const primaryBtn = {
+  backgroundColor: "#2fbf71",
+  color: "#000",
   border: "none",
   padding: "10px 18px",
   borderRadius: 6,
+  fontSize: 14,
+  fontWeight: 600,
   cursor: "pointer"
 };
 
-const grayBtn = {
-  background: "#6a6464",
-  color: "white",
-  border: "none",
+const secondaryBtn = {
+  backgroundColor: "transparent",
+  color: "#cccccc",
+  border: "1px solid #333",
   padding: "10px 18px",
   borderRadius: 6,
+  fontSize: 14,
   cursor: "pointer"
 };
 

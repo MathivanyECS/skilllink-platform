@@ -5,6 +5,8 @@ import java.util.Objects;
 import java.util.regex.Pattern;
 import java.util.Collections;
 
+import org.springframework.security.core.context.SecurityContextHolder;
+
 import com.university.skilllink.dto.profile.CreateProfileRequest;
 import com.university.skilllink.dto.profile.ProfileDTO;
 import com.university.skilllink.dto.Review.ReviewDTO;
@@ -20,6 +22,8 @@ import com.university.skilllink.service.WishlistService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -308,7 +312,21 @@ public class ProfileServiceImpl implements ProfileService {
         String regex = "^" + Pattern.quote(sanitized);
 
         List<Profile> profiles = profileRepository.findBySkillsToTeachSkillNameRegex(regex);
-        log.info("Found {} profiles teaching skills starting with '{}'", profiles.size(), sanitized);
+
+        String loggedInStudentId = SecurityContextHolder
+                .getContext()
+                .getAuthentication()
+                .getName();
+
+        profiles = profiles.stream()
+                .filter(p -> p.getUserId() != null)
+                .filter(p -> !p.getUserId().equalsIgnoreCase(loggedInStudentId))
+                .toList();
+
+        log.info(
+                "Found {} profiles teaching skills starting with '{}' (excluding logged-in user)",
+                profiles.size(),
+                sanitized);
 
         return profiles.stream()
                 .map(profile -> {
