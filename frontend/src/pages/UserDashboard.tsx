@@ -180,6 +180,7 @@ const UserDashboard = () => {
       <RequestSkillModal
         open={showRequestModal}
         onClose={() => setShowRequestModal(false)}
+        onSuccess={() => alert("Request sent successfully!")}
       />
 
       {/* PROFILE VIEW MODAL */}
