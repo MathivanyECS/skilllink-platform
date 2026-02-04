@@ -5,6 +5,8 @@ import java.util.Objects;
 import java.util.regex.Pattern;
 import java.util.Collections;
 
+import org.springframework.security.core.context.SecurityContextHolder;
+
 import com.university.skilllink.dto.profile.CreateProfileRequest;
 import com.university.skilllink.dto.profile.ProfileDTO;
 import com.university.skilllink.dto.Review.ReviewDTO;
@@ -20,6 +22,8 @@ import com.university.skilllink.service.WishlistService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -154,7 +158,7 @@ public class ProfileServiceImpl implements ProfileService {
         ReviewRepository.RatingStats stats = reviewRepository.getRatingStatsByReviewedId(userId);
         Double averageRating = 0.0;
         Long reviewCount = 0L;
-        
+
         if (stats != null) {
             averageRating = stats.getAverage() != null ? stats.getAverage() : 0.0;
             reviewCount = stats.getCount() != null ? stats.getCount() : 0L;
@@ -167,19 +171,20 @@ public class ProfileServiceImpl implements ProfileService {
         }
         profileStats.setAverageRating(averageRating);
         profileStats.setTotalReviewsReceived(reviewCount.intValue());
-        
+
         // Save updated statistics
         profile.setStatistics(profileStats);
         profileRepository.save(profile);
 
         log.info("Profile fetched successfully for user ID: {}", userId);
-        
+
         // Create DTO with reviews
         ProfileDTO profileDTO = ProfileDTO.fromProfile(profile, user.getFullName(), user.getEmail());
+        profileDTO.setStudentId(user.getStudentId());
         profileDTO.setReviews(reviews); // Add reviews to DTO
         profileDTO.setAverageRating(averageRating);
         profileDTO.setReviewCount(reviewCount);
-        
+
         return profileDTO;
     }
 
@@ -211,26 +216,26 @@ public class ProfileServiceImpl implements ProfileService {
                     User user = userRepository.findById(profile.getUserId()).orElse(null);
                     if (user != null && user.getIsActive()) {
                         ProfileDTO dto = ProfileDTO.fromProfile(profile, user.getFullName(), user.getEmail());
-                        
+
                         // Get reviews and rating stats for this user
                         List<ReviewDTO> reviews = reviewRepository.findByReviewedIdAndIsPublicTrue(user.getId())
                                 .stream()
                                 .map(this::convertReviewToDTO)
                                 .collect(Collectors.toList());
-                        
+
                         ReviewRepository.RatingStats stats = reviewRepository.getRatingStatsByReviewedId(user.getId());
                         Double avgRating = 0.0;
                         Long reviewCount = 0L;
-                        
+
                         if (stats != null) {
                             avgRating = stats.getAverage() != null ? stats.getAverage() : 0.0;
                             reviewCount = stats.getCount() != null ? stats.getCount() : 0L;
                         }
-                        
+
                         dto.setReviews(reviews);
                         dto.setAverageRating(avgRating);
                         dto.setReviewCount(reviewCount);
-                        
+
                         return dto;
                     }
                     return null;
@@ -264,26 +269,26 @@ public class ProfileServiceImpl implements ProfileService {
                     User user = userRepository.findById(profile.getUserId()).orElse(null);
                     if (user != null && Boolean.TRUE.equals(user.getIsActive())) {
                         ProfileDTO dto = ProfileDTO.fromProfile(profile, user.getFullName(), user.getEmail());
-                        
+
                         // Get reviews and rating stats for this user
                         List<ReviewDTO> reviews = reviewRepository.findByReviewedIdAndIsPublicTrue(user.getId())
                                 .stream()
                                 .map(this::convertReviewToDTO)
                                 .collect(Collectors.toList());
-                        
+
                         ReviewRepository.RatingStats stats = reviewRepository.getRatingStatsByReviewedId(user.getId());
                         Double avgRating = 0.0;
                         Long reviewCount = 0L;
-                        
+
                         if (stats != null) {
                             avgRating = stats.getAverage() != null ? stats.getAverage() : 0.0;
                             reviewCount = stats.getCount() != null ? stats.getCount() : 0L;
                         }
-                        
+
                         dto.setReviews(reviews);
                         dto.setAverageRating(avgRating);
                         dto.setReviewCount(reviewCount);
-                        
+
                         return dto;
                     }
                     return null;
@@ -307,33 +312,47 @@ public class ProfileServiceImpl implements ProfileService {
         String regex = "^" + Pattern.quote(sanitized);
 
         List<Profile> profiles = profileRepository.findBySkillsToTeachSkillNameRegex(regex);
-        log.info("Found {} profiles teaching skills starting with '{}'", profiles.size(), sanitized);
+
+        String loggedInStudentId = SecurityContextHolder
+                .getContext()
+                .getAuthentication()
+                .getName();
+
+        profiles = profiles.stream()
+                .filter(p -> p.getUserId() != null)
+                .filter(p -> !p.getUserId().equalsIgnoreCase(loggedInStudentId))
+                .toList();
+
+        log.info(
+                "Found {} profiles teaching skills starting with '{}' (excluding logged-in user)",
+                profiles.size(),
+                sanitized);
 
         return profiles.stream()
                 .map(profile -> {
                     User user = userRepository.findById(profile.getUserId()).orElse(null);
                     if (user != null && user.getIsActive()) {
                         ProfileDTO dto = ProfileDTO.fromProfile(profile, user.getFullName(), user.getEmail());
-                        
+
                         // Get reviews and rating stats for this user
                         List<ReviewDTO> reviews = reviewRepository.findByReviewedIdAndIsPublicTrue(user.getId())
                                 .stream()
                                 .map(this::convertReviewToDTO)
                                 .collect(Collectors.toList());
-                        
+
                         ReviewRepository.RatingStats stats = reviewRepository.getRatingStatsByReviewedId(user.getId());
                         Double avgRating = 0.0;
                         Long reviewCount = 0L;
-                        
+
                         if (stats != null) {
                             avgRating = stats.getAverage() != null ? stats.getAverage() : 0.0;
                             reviewCount = stats.getCount() != null ? stats.getCount() : 0L;
                         }
-                        
+
                         dto.setReviews(reviews);
                         dto.setAverageRating(avgRating);
                         dto.setReviewCount(reviewCount);
-                        
+
                         return dto;
                     }
                     return null;
@@ -354,26 +373,26 @@ public class ProfileServiceImpl implements ProfileService {
                     User user = userRepository.findById(profile.getUserId()).orElse(null);
                     if (user != null && user.getIsActive()) {
                         ProfileDTO dto = ProfileDTO.fromProfile(profile, user.getFullName(), user.getEmail());
-                        
+
                         // Get reviews and rating stats for this user
                         List<ReviewDTO> reviews = reviewRepository.findByReviewedIdAndIsPublicTrue(user.getId())
                                 .stream()
                                 .map(this::convertReviewToDTO)
                                 .collect(Collectors.toList());
-                        
+
                         ReviewRepository.RatingStats stats = reviewRepository.getRatingStatsByReviewedId(user.getId());
                         Double avgRating = 0.0;
                         Long reviewCount = 0L;
-                        
+
                         if (stats != null) {
                             avgRating = stats.getAverage() != null ? stats.getAverage() : 0.0;
                             reviewCount = stats.getCount() != null ? stats.getCount() : 0L;
                         }
-                        
+
                         dto.setReviews(reviews);
                         dto.setAverageRating(avgRating);
                         dto.setReviewCount(reviewCount);
-                        
+
                         return dto;
                     }
                     return null;
@@ -534,26 +553,26 @@ public class ProfileServiceImpl implements ProfileService {
                     User user = userRepository.findById(profile.getUserId()).orElse(null);
                     if (user != null && user.getIsActive()) {
                         ProfileDTO dto = ProfileDTO.fromProfile(profile, user.getFullName(), user.getEmail());
-                        
+
                         // Get reviews and rating stats for this user
                         List<ReviewDTO> reviews = reviewRepository.findByReviewedIdAndIsPublicTrue(user.getId())
                                 .stream()
                                 .map(this::convertReviewToDTO)
                                 .collect(Collectors.toList());
-                        
+
                         ReviewRepository.RatingStats stats = reviewRepository.getRatingStatsByReviewedId(user.getId());
                         Double avgRating = 0.0;
                         Long reviewCount = 0L;
-                        
+
                         if (stats != null) {
                             avgRating = stats.getAverage() != null ? stats.getAverage() : 0.0;
                             reviewCount = stats.getCount() != null ? stats.getCount() : 0L;
                         }
-                        
+
                         dto.setReviews(reviews);
                         dto.setAverageRating(avgRating);
                         dto.setReviewCount(reviewCount);
-                        
+
                         return dto;
                     }
                     return null;
@@ -580,26 +599,26 @@ public class ProfileServiceImpl implements ProfileService {
                     User user = userRepository.findById(profile.getUserId()).orElse(null);
                     if (user != null && user.getIsActive()) {
                         ProfileDTO dto = ProfileDTO.fromProfile(profile, user.getFullName(), user.getEmail());
-                        
+
                         // Get reviews and rating stats for this user
                         List<ReviewDTO> reviews = reviewRepository.findByReviewedIdAndIsPublicTrue(user.getId())
                                 .stream()
                                 .map(this::convertReviewToDTO)
                                 .collect(Collectors.toList());
-                        
+
                         ReviewRepository.RatingStats stats = reviewRepository.getRatingStatsByReviewedId(user.getId());
                         Double avgRating = 0.0;
                         Long reviewCount = 0L;
-                        
+
                         if (stats != null) {
                             avgRating = stats.getAverage() != null ? stats.getAverage() : 0.0;
                             reviewCount = stats.getCount() != null ? stats.getCount() : 0L;
                         }
-                        
+
                         dto.setReviews(reviews);
                         dto.setAverageRating(avgRating);
                         dto.setReviewCount(reviewCount);
-                        
+
                         return dto;
                     }
                     return null;

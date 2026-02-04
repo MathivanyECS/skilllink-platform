@@ -10,7 +10,13 @@ public interface NotificationService {
 
     Notification createNotification(Notification notification);
 
-    Notification sendToUser(String userId, NotificationType type, String title, String message, Map<String, String> metadata);
+    void sendRequestSentNotification(
+            String senderUserId,
+            String skillName,
+            String providerName);
+
+    Notification sendToUser(String userId, NotificationType type, String title, String message,
+            Map<String, String> metadata);
 
     void sendToAllUsers(NotificationType type, String title, String message, Map<String, String> metadata);
 
@@ -21,15 +27,18 @@ public interface NotificationService {
     void send(String userId, String content, String link);
 
     List<Notification> getNotificationsForUser(String userId);
+
     List<Notification> getUserNotifications(String userId);
 
     List<Notification> getUnreadNotificationsForUser(String userId);
+
     long getUnreadCount(String userId);
 
     void markAsRead(String notificationId);
+
     void markAsRead(String notificationId, String userId);
+
     void markAllAsRead(String userId);
 
-   
     void deleteAllNotificationsForUser(String userId);
 }
