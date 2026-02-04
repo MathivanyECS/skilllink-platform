@@ -186,7 +186,7 @@ const UserDashboard = () => {
       {selectedUserId && (
         <ProfileViewModal
           userId={selectedUserId}
-          isOpen={openProfile}
+          open={openProfile}
           onClose={() => setOpenProfile(false)}
         />
       )}
