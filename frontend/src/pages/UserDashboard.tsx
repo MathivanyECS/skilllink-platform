@@ -1,11 +1,14 @@
 import { useEffect, useState } from "react";
 import api from "../services/api";
-import { FaPlus } from "react-icons/fa";
-import DashboardHeader from "../components/dashboard/DashboardHeader";
+import { FaPlus, FaSearch } from "react-icons/fa";
+
+import ProfileDropdown from "../components/dashboard/ProfileDropdown";
+import NotificationDrawer from "../components/dashboard/NotificationDrawer";
 import WishlistModal from "../components/dashboard/WishlistModal";
 import WishlistSuccessModal from "../components/dashboard/WishlistSuccessModal";
 import RequestSkillModal from "../components/dashboard/RequestSkillModal";
 import ProfileViewModal from "../components/dashboard/ProfileViewModal";
+import TopNavigationBar from "../components/layout/TopNavigationBar";
 
 interface Profile {
   userId: string;
@@ -22,16 +25,16 @@ const UserDashboard = () => {
   const [year, setYear] = useState("");
   const [skill, setSkill] = useState("");
 
-  // Modals
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
   const [showRequestModal, setShowRequestModal] = useState(false);
+
   const [openProfile, setOpenProfile] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
 
+  const [unreadCount, setUnreadCount] = useState(0);
   const [showWishlist, setShowWishlist] = useState(false);
   const [showWishlistSuccess, setShowWishlistSuccess] = useState(false);
-
-  // Notifications (managed by Header)
-  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     fetchProfiles();
@@ -78,46 +81,54 @@ const UserDashboard = () => {
 
   return (
     <div style={pageStyle}>
-      {/* HEADER */}
-      <DashboardHeader
-        unreadCount={unreadCount}
-        setUnreadCount={setUnreadCount}
-        showSearch={true}
-        searchValue={skill}
-        onSearchChange={setSkill}
+      {/* TOP NAV */}
+      <TopNavigationBar
+        active="dashboard"
+        onNotificationClick={() => setShowNotifications(true)}
+        onProfileClick={() => setShowProfileMenu(prev => !prev)}
       />
 
-      {/* FILTER BAR */}
-      <div style={panelStyle}>
-        <h2>Find Skill Providers</h2>
+      {showProfileMenu && (
+        <ProfileDropdown onClose={() => setShowProfileMenu(false)} />
+      )}
 
-        <div style={{ display: "flex", gap: 15 }}>
-          <select value={department} onChange={e => setDepartment(e.target.value)} style={selectStyle}>
-            <option value="">All Departments</option>
-            <option>Computer Science</option>
-            <option>Electronics</option>
-            <option>Chemistry</option>
-            <option>Industrial Management</option>
-            <option>Mathematics</option>
-            <option>Microbiology</option>
-            <option>Physics</option>
-            <option>Plant and Molecular biology</option>
-            <option>Zoology and Environmental Management</option>
-            <option>Statistics</option>
-          </select>
-
-          <select value={year} onChange={e => setYear(e.target.value)} style={selectStyle}>
-            <option value="">Year</option>
-            <option value="1">1st Year</option>
-            <option value="2">2nd Year</option>
-            <option value="3">3rd Year</option>
-            <option value="4">4th Year</option>
-          </select>
-
-          <span style={clearStyle} onClick={clearFilters}>
-            Clear Filters
-          </span>
+      {/* SEARCH + FILTER ROW */}
+      <div style={filterRow}>
+        <div style={searchBoxWide}>
+          <FaSearch size={18} color="#ddd" />
+          <input
+            placeholder="Search skills you want to learn…"
+            value={skill}
+            onChange={e => setSkill(e.target.value)}
+            style={searchInput}
+          />
         </div>
+
+        <select value={department} onChange={e => setDepartment(e.target.value)} style={selectStyle}>
+          <option value="">All Departments</option>
+          <option>Computer Science</option>
+          <option>Electronics</option>
+          <option>Chemistry</option>
+          <option>Industrial Management</option>
+          <option>Mathematics</option>
+          <option>Microbiology</option>
+          <option>Physics</option>
+          <option>Plant and Molecular biology</option>
+          <option>Zoology and Environmental Management</option>
+          <option>Statistics</option>
+        </select>
+
+        <select value={year} onChange={e => setYear(e.target.value)} style={selectStyle}>
+          <option value="">Year</option>
+          <option value="1">1st Year</option>
+          <option value="2">2nd Year</option>
+          <option value="3">3rd Year</option>
+          <option value="4">4th Year</option>
+        </select>
+
+        <span style={clearStyle} onClick={clearFilters}>
+          Clear Filters
+        </span>
       </div>
 
       {/* WISHLIST */}
@@ -151,7 +162,6 @@ const UserDashboard = () => {
         {profiles.map(p => (
           <div key={p.userId} style={cardStyle}>
             <div style={avatarStyle(p.profileImageUrl)} />
-
             <h3 style={nameStyle}>{p.fullName}</h3>
             <p>{p.department}</p>
             <p>{formatYear(p.yearOfStudy)}</p>
@@ -176,124 +186,148 @@ const UserDashboard = () => {
         ))}
       </div>
 
-      {/* REQUEST MODAL */}
       <RequestSkillModal
         open={showRequestModal}
         onClose={() => setShowRequestModal(false)}
-        onSuccess={() => alert("Request sent successfully!")}
+        onSuccess={() => alert("Request sent successfully")}
       />
 
-      {/* PROFILE VIEW MODAL */}
-      {selectedUserId && (
-        <ProfileViewModal
-          userId={selectedUserId}
-          open={openProfile}
-          onClose={() => setOpenProfile(false)}
-        />
-      )}
+      <ProfileViewModal
+        open={openProfile}
+        userId={selectedUserId}
+        onClose={() => setOpenProfile(false)}
+      />
+
+      <NotificationDrawer
+        open={showNotifications}
+        onClose={() => setShowNotifications(false)}
+        onUnreadCount={setUnreadCount}
+      />
     </div>
   );
 };
 
 /* ================= STYLES ================= */
 
-const pageStyle: React.CSSProperties = {
-  background: "#1e1e1e",
+const GREEN = "#38AE56";
+
+const pageStyle = {
   minHeight: "100vh",
+  background: "radial-gradient(circle at top, #1c1c1c, #000)",
   color: "white",
-  paddingBottom: 40
+  fontFamily: "Arial, sans-serif"
 };
 
-const panelStyle: React.CSSProperties = {
-  background: "#2a2626",
-  margin: "0 48px 24px",
-  padding: "24px 32px",
-  borderRadius: 20
+const filterRow = {
+  margin: "28px 40px",
+  padding: 22,
+  display: "flex",
+  alignItems: "center",
+  gap: 16,
+  background: "linear-gradient(180deg, #242020, #171414)",
+  borderRadius: 16,
+  boxShadow: "0 0 22px rgba(0,0,0,0.6)"
 };
 
-const selectStyle: React.CSSProperties = {
-  padding: "10px 16px",
-  borderRadius: 8,
+const searchBoxWide = {
+  flex: 1,
+  background: "#3a3636",
+  padding: "14px 22px",
+  borderRadius: 14,
+  display: "flex",
+  alignItems: "center"
+};
+
+const searchInput = {
+  background: "transparent",
   border: "none",
-  background: "#3e3a3a",
-  color: "white",
-  fontSize: 14,
+  outline: "none",
+  color: "#f5f5f5",
+  marginLeft: 12,
+  width: "100%",
+  fontSize: 17,
+  fontWeight: 500,
+  letterSpacing: "0.3px"
+};
+
+const selectStyle = {
+  background: "#3a3636",
+  color: "#f5f5f5",
+  border: "none",
+  padding: "14px 18px",
+  borderRadius: 12,
+  fontSize: 15,
+  fontWeight: 500,
   cursor: "pointer"
 };
 
-const clearStyle: React.CSSProperties = {
-  color: "#b0b0b0",
-  fontSize: 14,
-  textDecoration: "underline",
+const clearStyle = {
+  marginLeft: "auto",
+  color: GREEN,
   cursor: "pointer",
-  marginTop: 10
+  fontWeight: "bold"
 };
 
-const wishlistStyle: React.CSSProperties = {
-  background: "linear-gradient(90deg, #38AE56 0%, #2E8B45 100%)",
-  margin: "0 48px 32px",
-  padding: "20px 32px",
-  borderRadius: 16,
+const wishlistStyle = {
+  margin: "20px 40px",
+  background: "linear-gradient(180deg, #2a2323, #1a1414)",
+  padding: 22,
+  borderRadius: 14,
   display: "flex",
   justifyContent: "space-between",
   alignItems: "center"
 };
 
-const wishlistBtn: React.CSSProperties = {
-  background: "white",
-  color: "#38AE56",
+const wishlistBtn = {
+  background: GREEN,
   border: "none",
-  padding: "12px 24px",
-  borderRadius: 12,
+  padding: "16px 28px",
+  color: "white",
+  borderRadius: 14,
+  fontSize: 20,
   fontWeight: "bold",
-  fontSize: 16,
   display: "flex",
   alignItems: "center",
-  gap: 8,
+  gap: 14,
   cursor: "pointer"
 };
 
-const gridStyle: React.CSSProperties = {
+const gridStyle = {
+  margin: "36px",
   display: "grid",
-  gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
-  gap: 24,
-  padding: "0 48px"
+  gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
+  gap: 32
 };
 
-const cardStyle: React.CSSProperties = {
-  background: "#2a2626",
-  padding: 24,
-  borderRadius: 20,
-  textAlign: "center",
-  boxShadow: "0 4px 15px rgba(0,0,0,0.3)"
+const cardStyle = {
+  background: "#3b3535",
+  padding: 20,
+  borderRadius: 14,
+  boxShadow: "0 0 25px rgba(0,0,0,0.7)"
 };
 
-const nameStyle: React.CSSProperties = {
-  fontSize: 18,
+const nameStyle = {
+  fontSize: 22,
   fontWeight: "bold",
-  marginBottom: 4
+  marginBottom: 6
 };
 
-const greenBtn: React.CSSProperties = {
-  background: "#38AE56",
+const greenBtn = {
+  background: GREEN,
   border: "none",
-  width: "100%",
-  padding: "10px",
-  borderRadius: 10,
+  padding: "10px 18px",
   color: "white",
-  fontWeight: "bold",
-  marginBottom: 8,
+  borderRadius: 8,
+  marginRight: 10,
   cursor: "pointer"
 };
 
-const grayBtn: React.CSSProperties = {
-  background: "#4a4646",
+const grayBtn = {
+  background: "#6a6464",
   border: "none",
-  width: "100%",
-  padding: "10px",
-  borderRadius: 10,
+  padding: "10px 18px",
   color: "white",
-  fontWeight: "bold",
+  borderRadius: 8,
   cursor: "pointer"
 };
 

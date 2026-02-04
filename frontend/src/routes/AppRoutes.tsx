@@ -11,7 +11,6 @@ import CreateProfile from "../pages/CreateProfile";
 import EditProfile from "../pages/EditProfile";
 import Sessions from "../pages/Sessions";
 import Collaboration from "../pages/Collaboration";
-import PostDetail from "../components/collaboration/PostDetail";
 
 const AppRoutes = () => (
   <Routes>
@@ -27,7 +26,6 @@ const AppRoutes = () => (
     <Route path="/edit-profile" element={<EditProfile />} />
     <Route path="/sessions" element={<Sessions />} />
     <Route path="/collaboration" element={<Collaboration />} />
-    <Route path="/collaboration/:postId" element={<PostDetail />} />
   </Routes>
 );
 
