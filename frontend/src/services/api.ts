@@ -1,19 +1,19 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "http://localhost:8081/api",
+  baseURL: "/api", // Use relative path to leverage Vite proxy
 });
 
 // ✅ JWT interceptor (correct)
 api.interceptors.request.use(
-  (config) => {
+  (config: any) => {
     const token = localStorage.getItem("token");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
-  (error) => Promise.reject(error)
+  (error: any) => Promise.reject(error)
 );
 
 export default api;
