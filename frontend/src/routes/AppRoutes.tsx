@@ -11,6 +11,7 @@ import CreateProfile from "../pages/CreateProfile";
 import EditProfile from "../pages/EditProfile";
 import Sessions from "../pages/Sessions";
 import Collaboration from "../pages/Collaboration";
+import ProtectedRoute from "./ProtectedRoute"; // Import ProtectedRoute
 
 const AppRoutes = () => (
   <Routes>
@@ -23,9 +24,14 @@ const AppRoutes = () => (
     <Route path="/create-profile" element={<CreateProfile />} />
 
     {/* ✅ NEW routes for Profile Dropdown */}
-    <Route path="/edit-profile" element={<EditProfile />} />
-    <Route path="/sessions" element={<Sessions />} />
-    <Route path="/collaboration" element={<Collaboration />} />
+    <Route element={<ProtectedRoute />}>
+      <Route path="/edit-profile" element={<EditProfile />} />
+      <Route path="/sessions" element={<Sessions />} />
+      <Route path="/collaboration" element={<Collaboration />} />
+      <Route path="/dashboard" element={<UserDashboard />} />
+      <Route path="/admin-dashboard" element={<AdminDashboard />} />
+      <Route path="/create-profile" element={<CreateProfile />} />
+    </Route>
   </Routes>
 );
 
