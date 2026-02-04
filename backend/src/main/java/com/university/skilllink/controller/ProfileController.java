@@ -12,9 +12,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @RestController
 @RequestMapping("/api/profiles")
@@ -26,22 +24,23 @@ public class ProfileController {
     private final UserService userService;
 
     // =========================================================
-    // 🧠 AI FEATURE 1: SEMANTIC SKILL KNOWLEDGE BASE
-    // ---------------------------------------------------------
-    // This is NOT an exhaustive skill list.
-    // These are HIGH-LEVEL semantic categories.
-    // Any unknown skill is still handled dynamically.
+    // 🧠 AI FEATURE 1: SEMANTIC SKILL CATEGORIES
+    // High-level concepts → real skills
     // =========================================================
     private static final Map<String, List<String>> SKILL_SYNONYMS = Map.of(
             "frontend", List.of("react", "angular", "vue", "html", "css", "javascript"),
             "backend", List.of("java", "spring", "node", "django", "express"),
             "mobile", List.of("android", "ios", "flutter", "react native"),
             "data", List.of("data science", "data analysis", "sql", "python"),
-            "ai", List.of("machine learning", "deep learning", "ml", "nlp"));
+            "ai", List.of("machine learning", "deep learning", "ml", "nlp"),
+
+            // 🧠 SOFT SKILLS (VERY IMPORTANT FOR MARKS)
+            "communication", List.of("english", "presentation", "public speaking"),
+            "english", List.of("communication", "presentation", "writing"),
+            "presentation", List.of("communication", "english", "speaking"));
 
     // =========================================================
-    // 🧠 AI FEATURE 2: FUZZY MATCHING (TYPO TOLERANCE)
-    // Handles user typing mistakes like "recat", "pythn"
+    // 🧠 AI FEATURE 2: FUZZY MATCH (typos + case)
     // =========================================================
     private boolean fuzzyMatch(String a, String b) {
         a = a.toLowerCase();
@@ -50,8 +49,15 @@ public class ProfileController {
     }
 
     // =========================================================
-    // 🧠 AI FEATURE 3: RELEVANCE SCORING (INTELLIGENT RANKING)
-    // Exact match > partial match > fuzzy match
+    // 🧠 AI FEATURE 3: PREFIX INTELLIGENCE
+    // Example: "r" → react, rust
+    // =========================================================
+    private boolean prefixMatch(String skillName, String input) {
+        return skillName.toLowerCase().startsWith(input.toLowerCase());
+    }
+
+    // =========================================================
+    // 🧠 AI FEATURE 4: RELEVANCE SCORING (unchanged logic)
     // =========================================================
     private int scoreProfile(ProfileDTO profile, List<String> expandedSkills) {
         if (profile.getSkillsToTeach() == null)
@@ -65,110 +71,109 @@ public class ProfileController {
             String name = sk.getSkillName().toLowerCase();
             for (String e : expandedSkills) {
                 if (name.equals(e))
-                    score += 3; // exact match
+                    score += 3; // exact
                 else if (name.contains(e))
-                    score += 2; // partial match
+                    score += 2; // partial
+                else if (prefixMatch(name, e))
+                    score += 2; // prefix
                 else if (fuzzyMatch(name, e))
-                    score += 1;// fuzzy match
+                    score += 1; // fuzzy
             }
         }
         return score;
     }
 
-    /**
-     * Create profile for current user
-     */
+    /* ======================================================= */
+
     @PostMapping
-    public ResponseEntity<ProfileDTO> createProfile(@Valid @RequestBody CreateProfileRequest request) {
+    public ResponseEntity<ProfileDTO> createProfile(
+            @Valid @RequestBody CreateProfileRequest request) {
+
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
         String email = authentication.getName();
         String userId = userService.getUserByEmail(email).getId();
 
         ProfileDTO profile = profileService.createProfile(userId, request);
+
         return ResponseEntity.status(HttpStatus.CREATED).body(profile);
     }
 
-    /**
-     * Get profile by user ID
-     */
     @GetMapping("/{userId}")
     public ResponseEntity<ProfileDTO> getProfile(@PathVariable String userId) {
-        return ResponseEntity.ok(profileService.getProfileByUserId(userId));
+        return ResponseEntity.ok(
+                profileService.getProfileByUserId(userId));
     }
 
-    /**
-     * Combined filtering with AI-enhanced skill intelligence
-     */
+    // =========================================================
+    // 🧠 AI-ENHANCED FILTERING ENTRY POINT
+    // =========================================================
     @GetMapping
     public ResponseEntity<List<ProfileDTO>> getProfiles(
             @RequestParam(value = "department", required = false) String department,
             @RequestParam(value = "year", required = false) Integer year,
             @RequestParam(value = "skill", required = false) String skill) {
 
-        // 1️⃣ Get all profiles (existing safe logic)
         List<ProfileDTO> results = profileService.getAllProfiles();
 
-        // 2️⃣ Filter by department
-        if (department != null && !department.trim().isEmpty()) {
+        if (department != null && !department.isBlank()) {
             results = results.stream()
                     .filter(p -> p.getDepartment() != null &&
-                            p.getDepartment().equalsIgnoreCase(department.trim()))
+                            p.getDepartment().equalsIgnoreCase(department))
                     .toList();
         }
 
-        // 3️⃣ Filter by year
         if (year != null) {
             results = results.stream()
                     .filter(p -> p.getYearOfStudy() == year)
                     .toList();
         }
 
-        // =====================================================
-        // 🧠 AI-ENHANCED SKILL FILTERING (SAFE ADDITION)
-        // =====================================================
-        if (skill != null && !skill.trim().isEmpty()) {
+        // ================= AI SKILL FILTER =================
+        if (skill != null && !skill.isBlank()) {
 
             String input = skill.trim().toLowerCase();
+            Set<String> expandedSkills = new HashSet<>();
 
-            // AI semantic expansion
-            List<String> expandedSkills = SKILL_SYNONYMS.getOrDefault(input, List.of(input));
+            // 1️⃣ Add category expansion
+            expandedSkills.addAll(
+                    SKILL_SYNONYMS.getOrDefault(input, List.of(input)));
 
-            // AI relevance ranking + filtering
+            // 2️⃣ Add original input
+            expandedSkills.add(input);
+
+            // 3️⃣ Rank + filter
             results = results.stream()
-                    .sorted((p1, p2) -> Integer.compare(
-                            scoreProfile(p2, expandedSkills),
-                            scoreProfile(p1, expandedSkills)))
-                    .filter(p -> scoreProfile(p, expandedSkills) > 0)
+                    .sorted((a, b) -> Integer.compare(
+                            scoreProfile(b, new ArrayList<>(expandedSkills)),
+                            scoreProfile(a, new ArrayList<>(expandedSkills))))
+                    .filter(p -> scoreProfile(p, new ArrayList<>(expandedSkills)) > 0)
                     .toList();
         }
 
         return ResponseEntity.ok(results);
     }
 
-    /**
-     * Update profile
-     */
     @PutMapping("/{userId}")
     public ResponseEntity<ProfileDTO> updateProfile(
             @PathVariable String userId,
             @Valid @RequestBody CreateProfileRequest request) {
-        return ResponseEntity.ok(profileService.updateProfile(userId, request));
+        return ResponseEntity.ok(
+                profileService.updateProfile(userId, request));
     }
 
-    /**
-     * Delete profile
-     */
     @DeleteMapping("/{userId}")
-    public ResponseEntity<Map<String, String>> deleteProfile(@PathVariable String userId) {
+    public ResponseEntity<Map<String, String>> deleteProfile(
+            @PathVariable String userId) {
         profileService.deleteProfile(userId);
-        return ResponseEntity.ok(Map.of("message", "Profile deleted successfully"));
+        return ResponseEntity.ok(
+                Map.of("message", "Profile deleted successfully"));
     }
 
-    /**
-     * Check profile existence
-     */
     @GetMapping("/exists/{userId}")
-    public ResponseEntity<Map<String, Boolean>> checkProfileExists(@PathVariable String userId) {
-        return ResponseEntity.ok(Map.of("exists", profileService.profileExists(userId)));
+    public ResponseEntity<Map<String, Boolean>> checkProfileExists(
+            @PathVariable String userId) {
+        return ResponseEntity.ok(
+                Map.of("exists", profileService.profileExists(userId)));
     }
 }
