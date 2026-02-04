@@ -9,7 +9,10 @@ const WishlistSuccessModal = ({ open, onClose }: Props) => {
   return (
     <div style={overlay}>
       <div style={box}>
-        <h2>Wishlist Added Successfully</h2>
+        <h1 style={title}>Wishlist Added</h1>
+
+        <p style={subtitle}>Skill added successfully</p>
+
         <div style={check}>✓</div>
 
         <button style={btn} onClick={onClose}>
@@ -20,10 +23,12 @@ const WishlistSuccessModal = ({ open, onClose }: Props) => {
   );
 };
 
+/* ================= STYLES ================= */
+
 const overlay = {
   position: "fixed" as const,
   inset: 0,
-  background: "rgba(0,0,0,0.6)",
+  background: "rgba(0,0,0,0.75)",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
@@ -31,27 +36,68 @@ const overlay = {
 };
 
 const box = {
-  background: "#38AE56",
-  padding: "40px 60px",
-  borderRadius: 16,
-  color: "white",
+  background: "#0f0f0f",
+  padding: "48px 64px",
+  borderRadius: 18,
+  minWidth: 460,
   textAlign: "center" as const,
-  minWidth: 420
+  color: "white",
+
+  /* ✅ GREEN OUTLINE + GLOW */
+  border: "2px solid #38AE56",
+  boxShadow:
+    "0 0 0 1px rgba(56,174,86,0.3), 0 30px 80px rgba(0,0,0,0.9)",
+
+  /* ✅ ANIMATION */
+  animation: "popup 0.35s ease-out"
+};
+
+const title = {
+  margin: 0,
+  marginBottom: 10,
+  fontSize: 30,
+  fontWeight: 700,
+  letterSpacing: "0.5px"
+};
+
+const subtitle = {
+  margin: 0,
+  fontSize: 16,
+  opacity: 0.75
 };
 
 const check = {
-  fontSize: 60,
-  margin: "20px 0"
+  fontSize: 64,
+  margin: "26px 0",
+  color: "#38AE56"
 };
 
 const btn = {
-  background: "white",
-  color: "#38AE56",
+  background: "#38AE56",
+  color: "#000",
   border: "none",
-  padding: "10px 24px",
-  borderRadius: 6,
-  fontWeight: "bold",
+  padding: "12px 36px",
+  borderRadius: 10,
+  fontSize: 16,
+  fontWeight: 600,
   cursor: "pointer"
 };
+
+/* ================= ANIMATION ================= */
+/* NOTE: inline keyframes via style tag */
+const styleSheet = document.createElement("style");
+styleSheet.innerHTML = `
+@keyframes popup {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+`;
+document.head.appendChild(styleSheet);
 
 export default WishlistSuccessModal;
