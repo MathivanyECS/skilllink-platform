@@ -13,10 +13,10 @@ A platform where university students can:
 - Collaborate on projects and hackathons
 
 ## 👥 Team Members
-1. [Your Name] - Team Lead & Authentication Module
-2. [Member 2 Name] - Skill Market & Learning Sessions
-3. [Member 3 Name] - Profile Management & Reviews
-4. [Member 4 Name] - Collaboration Board & Wishlist
+1. Mathivany - Team Lead & Authentication Module
+2. Prinshiga - Skill Market & Learning Sessions
+3. Hashmithan - Profile Management & Reviews
+4. Chankavi - Collaboration Board & Admin
 
 ## 🛠️ Tech Stack
 - **Frontend:** React TypeScript + Vite

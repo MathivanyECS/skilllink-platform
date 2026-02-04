@@ -13,7 +13,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/notifications")
 @RequiredArgsConstructor
-@CrossOrigin(origins = {"http://localhost:3000","http://localhost:5173"})
+@CrossOrigin(origins = { "http://localhost:3000", "http://localhost:5173" })
 public class NotificationController {
 
     private final NotificationService notificationService;
@@ -62,7 +62,10 @@ public class NotificationController {
         return ResponseEntity.noContent().build();
     }
 
-    /** Legacy mapping kept for compatibility: mark single notification read without auth (admin use) */
+    /**
+     * Legacy mapping kept for compatibility: mark single notification read without
+     * auth (admin use)
+     */
     @PostMapping("/mark-read/{notificationId}")
     public ResponseEntity<Void> markReadLegacy(@PathVariable String notificationId) {
         notificationService.markAsRead(notificationId);
@@ -84,4 +87,5 @@ public class NotificationController {
         notificationService.markAllAsRead(userId);
         return ResponseEntity.noContent().build();
     }
+
 }

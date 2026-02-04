@@ -55,8 +55,7 @@ public class AuthServiceImpl implements AuthService {
                         .username(savedUser.getEmail())
                         .password(savedUser.getPassword())
                         .authorities("ROLE_" + savedUser.getRole().name())
-                        .build()
-        );
+                        .build());
 
         return new AuthResponse(token, UserDTO.fromUser(savedUser));
     }
@@ -65,8 +64,9 @@ public class AuthServiceImpl implements AuthService {
     public AuthResponse login(LoginRequest request) {
         try {
             authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
-            );
+                    new UsernamePasswordAuthenticationToken(
+                            request.getEmail(),
+                            request.getPassword()));
         } catch (Exception e) {
             throw new InvalidCredentialsException("Invalid email or password");
         }
@@ -83,8 +83,7 @@ public class AuthServiceImpl implements AuthService {
                         .username(user.getEmail())
                         .password(user.getPassword())
                         .authorities("ROLE_" + user.getRole().name())
-                        .build()
-        );
+                        .build());
 
         return new AuthResponse(token, UserDTO.fromUser(user));
     }
