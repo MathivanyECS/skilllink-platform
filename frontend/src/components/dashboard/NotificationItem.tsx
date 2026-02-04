@@ -8,6 +8,8 @@ const typeText: Record<string, string> = {
   WISHLIST_AVAILABLE: "Wishlist match found",
   SESSION_UPDATE: "Session update",
   PROFILE_UPDATED: "Profile updated",
+  CONNECT: "New collaboration post",
+  POST_APPLICATION: "New collaboration application",
   GENERIC: "Notification"
 };
 
