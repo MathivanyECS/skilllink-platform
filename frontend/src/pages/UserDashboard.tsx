@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
 import api from "../services/api";
-import { FaPlus, FaBell, FaUserCircle, FaChevronDown, FaSearch } from "react-icons/fa";
-import logo from "../assets/images/skilllink-logo.png";
+import { FaPlus, FaSearch } from "react-icons/fa";
+
 import ProfileDropdown from "../components/dashboard/ProfileDropdown";
 import NotificationDrawer from "../components/dashboard/NotificationDrawer";
 import WishlistModal from "../components/dashboard/WishlistModal";
 import WishlistSuccessModal from "../components/dashboard/WishlistSuccessModal";
 import RequestSkillModal from "../components/dashboard/RequestSkillModal";
-import ProfileViewModal from "../components/dashboard/ProfileViewModal"; 
+import ProfileViewModal from "../components/dashboard/ProfileViewModal";
+import TopNavigationBar from "../components/layout/TopNavigationBar";
 
 interface Profile {
   userId: string;
@@ -23,8 +24,8 @@ const UserDashboard = () => {
   const [department, setDepartment] = useState("");
   const [year, setYear] = useState("");
   const [skill, setSkill] = useState("");
-  const [showProfileMenu, setShowProfileMenu] = useState(false);
 
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showRequestModal, setShowRequestModal] = useState(false);
 
@@ -34,8 +35,6 @@ const UserDashboard = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [showWishlist, setShowWishlist] = useState(false);
   const [showWishlistSuccess, setShowWishlistSuccess] = useState(false);
-
-  
 
   useEffect(() => {
     fetchProfiles();
@@ -82,76 +81,54 @@ const UserDashboard = () => {
 
   return (
     <div style={pageStyle}>
-      {/* HEADER */}
-      <div style={headerStyle}>
-        <img src={logo} style={{ height: 100 }} />
+      {/* TOP NAV */}
+      <TopNavigationBar
+        active="dashboard"
+        onNotificationClick={() => setShowNotifications(true)}
+        onProfileClick={() => setShowProfileMenu(prev => !prev)}
+      />
 
-        <div style={searchBox}>
-          <FaSearch size={18} color="white" />
+      {showProfileMenu && (
+        <ProfileDropdown onClose={() => setShowProfileMenu(false)} />
+      )}
+
+      {/* SEARCH + FILTER ROW */}
+      <div style={filterRow}>
+        <div style={searchBoxWide}>
+          <FaSearch size={18} color="#ddd" />
           <input
-placeholder="Search skills you want to learn…"
+            placeholder="Search skills you want to learn…"
             value={skill}
             onChange={e => setSkill(e.target.value)}
             style={searchInput}
           />
         </div>
 
-        <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 16 }}>
-          <div style={{ position: "relative" }}>
-            <FaBell
-              size={22}
-              color="white"
-              style={{ cursor: "pointer" }}
-              onClick={() => setShowNotifications(true)}
-            />
-            {unreadCount > 0 && <span style={badge}>{unreadCount}</span>}
-          </div>
+        <select value={department} onChange={e => setDepartment(e.target.value)} style={selectStyle}>
+          <option value="">All Departments</option>
+          <option>Computer Science</option>
+          <option>Electronics</option>
+          <option>Chemistry</option>
+          <option>Industrial Management</option>
+          <option>Mathematics</option>
+          <option>Microbiology</option>
+          <option>Physics</option>
+          <option>Plant and Molecular biology</option>
+          <option>Zoology and Environmental Management</option>
+          <option>Statistics</option>
+        </select>
 
-          <div
-            style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}
-            onClick={() => setShowProfileMenu(prev => !prev)}
-          >
-            <FaUserCircle size={24} color="white" />
-            <FaChevronDown size={14} color="white" />
-          </div>
+        <select value={year} onChange={e => setYear(e.target.value)} style={selectStyle}>
+          <option value="">Year</option>
+          <option value="1">1st Year</option>
+          <option value="2">2nd Year</option>
+          <option value="3">3rd Year</option>
+          <option value="4">4th Year</option>
+        </select>
 
-          {showProfileMenu && (
-            <ProfileDropdown onClose={() => setShowProfileMenu(false)} />
-          )}
-        </div>
-      </div>
-
-      {/* FILTER BAR */}
-      <div style={panelStyle}>
-        <h2>Find Skill Providers</h2>
-
-        <div style={{ display: "flex", gap: 15 }}>
-          <select value={department} onChange={e => setDepartment(e.target.value)} style={selectStyle}>
-            <option value="">All Departments</option>
-            <option>Computer Science</option>
-            <option>Electronics</option>
-            <option>Chemistry</option>
-            <option>Industrial Management</option>
-            <option>Mathematics</option>
-            <option>Microbiology</option>
-            <option>Physics</option>
-            <option>Plant and Molecular biology</option>
-            <option>Zoology and Environmental Management</option>
-            <option>Statistics</option>
-          </select>
-
-          <select value={year} onChange={e => setYear(e.target.value)} style={selectStyle}>
-            <option value="">Year</option>
-            <option value="1">1st Year</option>
-            <option value="2">2nd Year</option>
-            <option value="3">3rd Year</option>
-            <option value="4">4th Year</option>
-          </select>
-
-          <span style={clearStyle} onClick={clearFilters}>
-            Clear Filters
-          </span>
-        </div>
+        <span style={clearStyle} onClick={clearFilters}>
+          Clear Filters
+        </span>
       </div>
 
       {/* WISHLIST */}
@@ -185,7 +162,6 @@ placeholder="Search skills you want to learn…"
         {profiles.map(p => (
           <div key={p.userId} style={cardStyle}>
             <div style={avatarStyle(p.profileImageUrl)} />
-
             <h3 style={nameStyle}>{p.fullName}</h3>
             <p>{p.department}</p>
             <p>{formatYear(p.yearOfStudy)}</p>
@@ -199,7 +175,7 @@ placeholder="Search skills you want to learn…"
               <button
                 style={grayBtn}
                 onClick={() => {
-                  setSelectedUserId(p.userId); // ✅ FIXED
+                  setSelectedUserId(p.userId);
                   setOpenProfile(true);
                 }}
               >
@@ -235,90 +211,55 @@ placeholder="Search skills you want to learn…"
 
 const GREEN = "#38AE56";
 
-const badge = {
-  position: "absolute" as const,
-  top: -6,
-  right: -6,
-  background: "red",
-  color: "white",
-  borderRadius: "50%",
-  fontSize: 12,
-  padding: "2px 6px",
-  minWidth: 18,
-  textAlign: "center" as const
-};
-
 const pageStyle = {
   minHeight: "100vh",
-  background: "radial-gradient(circle at top, #1e1e1e, #000)",
+  background: "radial-gradient(circle at top, #1c1c1c, #000)",
   color: "white",
   fontFamily: "Arial, sans-serif"
 };
 
-const headerStyle = {
+const filterRow = {
+  margin: "28px 40px",
+  padding: 22,
   display: "flex",
-  justifyContent: "space-between",
   alignItems: "center",
-  padding: "28px 48px",
-  minHeight: 120
+  gap: 16,
+  background: "linear-gradient(180deg, #242020, #171414)",
+  borderRadius: 16,
+  boxShadow: "0 0 22px rgba(0,0,0,0.6)"
 };
 
-
-const searchBox = {
-  background: "#373434",
+const searchBoxWide = {
+  flex: 1,
+  background: "#3a3636",
   padding: "14px 22px",
   borderRadius: 14,
   display: "flex",
-  alignItems: "center",
-  width: 520,
-  boxShadow: "0 0 0 1px #2f2f2f"
+  alignItems: "center"
 };
-
 
 const searchInput = {
-  backgroundColor: "transparent",
+  background: "transparent",
   border: "none",
   outline: "none",
-  color: "#f5f5f5",          // soft white
+  color: "#f5f5f5",
   marginLeft: 12,
   width: "100%",
-  fontSize: 18,              // slightly bigger
-  fontWeight: 500,           // semi-bold
-  letterSpacing: "0.4px",    // premium feel
-  fontFamily: "Inter, Arial, sans-serif"
-};
-
-
-
-const panelStyle = {
-  margin: "20px 40px",
-  background: "linear-gradient(180deg, #2a2323, #1a1414)",
-  padding: 22,
-  borderRadius: 12
+  fontSize: 17,
+  fontWeight: 500,
+  letterSpacing: "0.3px"
 };
 
 const selectStyle = {
   background: "#3a3636",
   color: "#f5f5f5",
   border: "none",
-  padding: "14px 52px 14px 18px",
+  padding: "14px 18px",
   borderRadius: 12,
-  fontSize: 16,
+  fontSize: 15,
   fontWeight: 500,
-  letterSpacing: "0.3px",
-  cursor: "pointer",
-
-  appearance: "none" as any,
-  WebkitAppearance: "none" as any,
-  MozAppearance: "none" as any,
-
-  backgroundImage:
-    "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='white'><path d='M6 9l6 6 6-6z'/></svg>\")",
-  backgroundRepeat: "no-repeat",
-  backgroundPosition: "right 18px center",
-  backgroundSize: "20px"
+  cursor: "pointer"
 };
-
 
 const clearStyle = {
   marginLeft: "auto",
