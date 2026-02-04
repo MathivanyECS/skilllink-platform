@@ -1,13 +1,11 @@
 import { useEffect, useState } from "react";
 import api from "../services/api";
-import { FaPlus, FaBell, FaUserCircle, FaChevronDown, FaSearch } from "react-icons/fa";
-import logo from "../assets/images/skilllink-logo.png";
-import ProfileDropdown from "../components/dashboard/ProfileDropdown";
-import NotificationDrawer from "../components/dashboard/NotificationDrawer";
+import { FaPlus } from "react-icons/fa";
+import DashboardHeader from "../components/dashboard/DashboardHeader";
 import WishlistModal from "../components/dashboard/WishlistModal";
 import WishlistSuccessModal from "../components/dashboard/WishlistSuccessModal";
 import RequestSkillModal from "../components/dashboard/RequestSkillModal";
-import ProfileViewModal from "../components/dashboard/ProfileViewModal"; 
+import ProfileViewModal from "../components/dashboard/ProfileViewModal";
 
 interface Profile {
   userId: string;
@@ -23,19 +21,17 @@ const UserDashboard = () => {
   const [department, setDepartment] = useState("");
   const [year, setYear] = useState("");
   const [skill, setSkill] = useState("");
-  const [showProfileMenu, setShowProfileMenu] = useState(false);
 
-  const [showNotifications, setShowNotifications] = useState(false);
+  // Modals
   const [showRequestModal, setShowRequestModal] = useState(false);
-
   const [openProfile, setOpenProfile] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
 
-  const [unreadCount, setUnreadCount] = useState(0);
   const [showWishlist, setShowWishlist] = useState(false);
   const [showWishlistSuccess, setShowWishlistSuccess] = useState(false);
 
-  
+  // Notifications (managed by Header)
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     fetchProfiles();
@@ -83,43 +79,13 @@ const UserDashboard = () => {
   return (
     <div style={pageStyle}>
       {/* HEADER */}
-      <div style={headerStyle}>
-        <img src={logo} style={{ height: 100 }} />
-
-        <div style={searchBox}>
-          <FaSearch size={18} color="white" />
-          <input
-placeholder="Search skills you want to learn…"
-            value={skill}
-            onChange={e => setSkill(e.target.value)}
-            style={searchInput}
-          />
-        </div>
-
-        <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 16 }}>
-          <div style={{ position: "relative" }}>
-            <FaBell
-              size={22}
-              color="white"
-              style={{ cursor: "pointer" }}
-              onClick={() => setShowNotifications(true)}
-            />
-            {unreadCount > 0 && <span style={badge}>{unreadCount}</span>}
-          </div>
-
-          <div
-            style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}
-            onClick={() => setShowProfileMenu(prev => !prev)}
-          >
-            <FaUserCircle size={24} color="white" />
-            <FaChevronDown size={14} color="white" />
-          </div>
-
-          {showProfileMenu && (
-            <ProfileDropdown onClose={() => setShowProfileMenu(false)} />
-          )}
-        </div>
-      </div>
+      <DashboardHeader
+        unreadCount={unreadCount}
+        setUnreadCount={setUnreadCount}
+        showSearch={true}
+        searchValue={skill}
+        onSearchChange={setSkill}
+      />
 
       {/* FILTER BAR */}
       <div style={panelStyle}>
@@ -199,7 +165,7 @@ placeholder="Search skills you want to learn…"
               <button
                 style={grayBtn}
                 onClick={() => {
-                  setSelectedUserId(p.userId); // ✅ FIXED
+                  setSelectedUserId(p.userId);
                   setOpenProfile(true);
                 }}
               >
@@ -210,183 +176,123 @@ placeholder="Search skills you want to learn…"
         ))}
       </div>
 
+      {/* REQUEST MODAL */}
       <RequestSkillModal
         open={showRequestModal}
         onClose={() => setShowRequestModal(false)}
-        onSuccess={() => alert("Request sent successfully")}
       />
 
-      <ProfileViewModal
-        open={openProfile}
-        userId={selectedUserId}
-        onClose={() => setOpenProfile(false)}
-      />
-
-      <NotificationDrawer
-        open={showNotifications}
-        onClose={() => setShowNotifications(false)}
-        onUnreadCount={setUnreadCount}
-      />
+      {/* PROFILE VIEW MODAL */}
+      {selectedUserId && (
+        <ProfileViewModal
+          userId={selectedUserId}
+          isOpen={openProfile}
+          onClose={() => setOpenProfile(false)}
+        />
+      )}
     </div>
   );
 };
 
 /* ================= STYLES ================= */
 
-const GREEN = "#38AE56";
-
-const badge = {
-  position: "absolute" as const,
-  top: -6,
-  right: -6,
-  background: "red",
-  color: "white",
-  borderRadius: "50%",
-  fontSize: 12,
-  padding: "2px 6px",
-  minWidth: 18,
-  textAlign: "center" as const
-};
-
-const pageStyle = {
+const pageStyle: React.CSSProperties = {
+  background: "#1e1e1e",
   minHeight: "100vh",
-  background: "radial-gradient(circle at top, #1e1e1e, #000)",
   color: "white",
-  fontFamily: "Arial, sans-serif"
+  paddingBottom: 40
 };
 
-const headerStyle = {
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-  padding: "28px 48px",
-  minHeight: 120
+const panelStyle: React.CSSProperties = {
+  background: "#2a2626",
+  margin: "0 48px 24px",
+  padding: "24px 32px",
+  borderRadius: 20
 };
 
-
-const searchBox = {
-  background: "#373434",
-  padding: "14px 22px",
-  borderRadius: 14,
-  display: "flex",
-  alignItems: "center",
-  width: 520,
-  boxShadow: "0 0 0 1px #2f2f2f"
-};
-
-
-const searchInput = {
-  backgroundColor: "transparent",
+const selectStyle: React.CSSProperties = {
+  padding: "10px 16px",
+  borderRadius: 8,
   border: "none",
-  outline: "none",
-  color: "#f5f5f5",          // soft white
-  marginLeft: 12,
-  width: "100%",
-  fontSize: 18,              // slightly bigger
-  fontWeight: 500,           // semi-bold
-  letterSpacing: "0.4px",    // premium feel
-  fontFamily: "Inter, Arial, sans-serif"
+  background: "#3e3a3a",
+  color: "white",
+  fontSize: 14,
+  cursor: "pointer"
 };
 
-
-
-const panelStyle = {
-  margin: "20px 40px",
-  background: "linear-gradient(180deg, #2a2323, #1a1414)",
-  padding: 22,
-  borderRadius: 12
-};
-
-const selectStyle = {
-  background: "#3a3636",
-  color: "#f5f5f5",
-  border: "none",
-  padding: "14px 52px 14px 18px",
-  borderRadius: 12,
-  fontSize: 16,
-  fontWeight: 500,
-  letterSpacing: "0.3px",
+const clearStyle: React.CSSProperties = {
+  color: "#b0b0b0",
+  fontSize: 14,
+  textDecoration: "underline",
   cursor: "pointer",
-
-  appearance: "none" as any,
-  WebkitAppearance: "none" as any,
-  MozAppearance: "none" as any,
-
-  backgroundImage:
-    "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='white'><path d='M6 9l6 6 6-6z'/></svg>\")",
-  backgroundRepeat: "no-repeat",
-  backgroundPosition: "right 18px center",
-  backgroundSize: "20px"
+  marginTop: 10
 };
 
-
-const clearStyle = {
-  marginLeft: "auto",
-  color: GREEN,
-  cursor: "pointer",
-  fontWeight: "bold"
-};
-
-const wishlistStyle = {
-  margin: "20px 40px",
-  background: "linear-gradient(180deg, #2a2323, #1a1414)",
-  padding: 22,
-  borderRadius: 14,
+const wishlistStyle: React.CSSProperties = {
+  background: "linear-gradient(90deg, #38AE56 0%, #2E8B45 100%)",
+  margin: "0 48px 32px",
+  padding: "20px 32px",
+  borderRadius: 16,
   display: "flex",
   justifyContent: "space-between",
   alignItems: "center"
 };
 
-const wishlistBtn = {
-  background: GREEN,
+const wishlistBtn: React.CSSProperties = {
+  background: "white",
+  color: "#38AE56",
   border: "none",
-  padding: "16px 28px",
-  color: "white",
-  borderRadius: 14,
-  fontSize: 20,
+  padding: "12px 24px",
+  borderRadius: 12,
   fontWeight: "bold",
+  fontSize: 16,
   display: "flex",
   alignItems: "center",
-  gap: 14,
+  gap: 8,
   cursor: "pointer"
 };
 
-const gridStyle = {
-  margin: "36px",
+const gridStyle: React.CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
-  gap: 32
+  gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
+  gap: 24,
+  padding: "0 48px"
 };
 
-const cardStyle = {
-  background: "#3b3535",
-  padding: 20,
-  borderRadius: 14,
-  boxShadow: "0 0 25px rgba(0,0,0,0.7)"
+const cardStyle: React.CSSProperties = {
+  background: "#2a2626",
+  padding: 24,
+  borderRadius: 20,
+  textAlign: "center",
+  boxShadow: "0 4px 15px rgba(0,0,0,0.3)"
 };
 
-const nameStyle = {
-  fontSize: 22,
+const nameStyle: React.CSSProperties = {
+  fontSize: 18,
   fontWeight: "bold",
-  marginBottom: 6
+  marginBottom: 4
 };
 
-const greenBtn = {
-  background: GREEN,
+const greenBtn: React.CSSProperties = {
+  background: "#38AE56",
   border: "none",
-  padding: "10px 18px",
+  width: "100%",
+  padding: "10px",
+  borderRadius: 10,
   color: "white",
-  borderRadius: 8,
-  marginRight: 10,
+  fontWeight: "bold",
+  marginBottom: 8,
   cursor: "pointer"
 };
 
-const grayBtn = {
-  background: "#6a6464",
+const grayBtn: React.CSSProperties = {
+  background: "#4a4646",
   border: "none",
-  padding: "10px 18px",
+  width: "100%",
+  padding: "10px",
+  borderRadius: 10,
   color: "white",
-  borderRadius: 8,
+  fontWeight: "bold",
   cursor: "pointer"
 };
 
