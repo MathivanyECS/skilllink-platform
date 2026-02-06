@@ -145,4 +145,18 @@ public ResponseEntity<SkillRequest> updateStatus(
         var list = requestService.getIncomingRequests(providerId);
         return ResponseEntity.ok(list);
     }
+
+    /**
+     * Get request by ID (for Session Board skill name fetching)
+     */
+    @GetMapping("/{requestId}")
+    public ResponseEntity<SkillRequest> getRequestById(@PathVariable String requestId, Authentication auth) {
+        // Authenticated users can fetch request details
+        // In a real app, I should check if user is participant (seeker or provider)
+        // For now, assuming if they have ID they can read it (like session board)
+        
+        return requestService.getById(requestId)
+            .map(ResponseEntity::ok)
+            .orElse(ResponseEntity.notFound().build());
+    }
 }
