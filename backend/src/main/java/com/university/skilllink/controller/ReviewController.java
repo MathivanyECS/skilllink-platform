@@ -34,24 +34,33 @@ public class ReviewController {
         return user.getId(); // Returns actual user ID, not email
     }
     
+    // Create a new review
+    // Learner submits a review for a finished session
     @PostMapping
     public ResponseEntity<ReviewDTO> createReview(@Valid @RequestBody CreateReviewRequest request) {
-        String reviewerId = getCurrentUserId(); // Now returns actual user ID
+        String reviewerId = getCurrentUserId(); // Get ID from logged-in user (JWT)
         ReviewDTO review = reviewService.createReview(request, reviewerId);
         return ResponseEntity.status(HttpStatus.CREATED).body(review);
     }
     
+    
+    // Get all reviews received by a specific user (Teacher)
+    // Used to show reviews on the Skill Provider's profile
     @GetMapping("/user/{userId}")
     public ResponseEntity<List<ReviewDTO>> getReviewsByUser(@PathVariable String userId) {
         List<ReviewDTO> reviews = reviewService.getReviewsByUser(userId);
         return ResponseEntity.ok(reviews);
     }
     
+    
+    // Get reviews for a specific session
+    // Used to check if a session has already been reviewed
     @GetMapping("/session/{sessionId}")
     public ResponseEntity<List<ReviewDTO>> getReviewsForSession(@PathVariable String sessionId) {
         List<ReviewDTO> reviews = reviewService.getReviewsForSession(sessionId);
         return ResponseEntity.ok(reviews);
     }
+    
     
     @GetMapping("/{reviewId}")
     public ResponseEntity<ReviewDTO> getReviewById(@PathVariable String reviewId) {
@@ -75,6 +84,8 @@ public class ReviewController {
         return ResponseEntity.noContent().build();
     }
     
+    // Calculate and return the average rating for a user
+    // Used in the Dashboard/Profile to show user's score (e.g., 4.5/5)
     @GetMapping("/user/{userId}/average-rating")
     public ResponseEntity<Double> getAverageRating(@PathVariable String userId) {
         Double averageRating = reviewService.calculateAverageRating(userId);
