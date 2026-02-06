@@ -127,6 +127,11 @@ public class SkillRequestServiceImpl implements RequestService {
             throw new RuntimeException("Only provider can update status");
         }
 
+        // 🔥 PREVENT DUPLICATE RESPONSES
+        if (req.getStatus() != SkillRequest.RequestStatus.PENDING) {
+            throw new RuntimeException("Request has already been processed as " + req.getStatus());
+        }
+
         SkillRequest.RequestStatus newStatus = SkillRequest.RequestStatus.valueOf(status.toUpperCase());
 
         req.setStatus(newStatus);

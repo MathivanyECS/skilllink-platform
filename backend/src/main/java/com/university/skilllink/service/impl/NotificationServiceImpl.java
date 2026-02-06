@@ -20,6 +20,7 @@ public class NotificationServiceImpl implements NotificationService {
 
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
+    private final org.springframework.messaging.simp.SimpMessagingTemplate messagingTemplate;
 
     // ------------------- Creation / Sending -------------------
     @Override
@@ -32,7 +33,18 @@ public class NotificationServiceImpl implements NotificationService {
             notification.setRead(false);
         if (notification.getMetadata() == null)
             notification.setMetadata(Map.of());
-        return notificationRepository.save(notification);
+
+        Notification saved = notificationRepository.save(notification);
+
+        // 🔥 REAL-TIME UPDATE
+        if (saved.getUserId() != null) {
+            messagingTemplate.convertAndSendToUser(
+                    saved.getUserId(),
+                    "/queue/notifications",
+                    saved);
+        }
+
+        return saved;
     }
 
     @Override
@@ -55,7 +67,7 @@ public class NotificationServiceImpl implements NotificationService {
                 .read(false)
                 .build();
 
-        return notificationRepository.save(n);
+        return createNotification(n); // reuse wrapper to send real-time
     }
 
     @Override
