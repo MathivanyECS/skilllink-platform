@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { SessionBoard } from "../../types/session.types";
 import { getProfileById } from "../../services/profileService";
 import { getUnreadCount } from "../../services/messageService";
-import { User } from "lucide-react";
+import { getRequestById, SkillRequest } from "../../services/requestService";
+import { User, CheckCircle } from "lucide-react";
 
 interface SessionListProps {
     sessions: SessionBoard[];
@@ -13,18 +14,22 @@ interface SessionListProps {
 
 const SessionList = ({ sessions, selectedSessionId, currentUserId, onSelectSession }: SessionListProps) => {
     const [partnerNames, setPartnerNames] = useState<Record<string, string>>({});
+    const [skillNames, setSkillNames] = useState<Record<string, string>>({});
+    const [sessionStatuses, setSessionStatuses] = useState<Record<string, string>>({});
     const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
 
     useEffect(() => {
-        // 1. Resolve names for all sessions
-        const fetchNames = async () => {
+        // 1. Resolve names and skills/status for all sessions
+        const fetchDetails = async () => {
             const names: Record<string, string> = {};
+            const skills: Record<string, string> = {};
+            const statuses: Record<string, string> = {};
 
             for (const session of sessions) {
                 // Determine partner ID
                 const partnerId = session.learnerId === currentUserId ? session.teacherId : session.learnerId;
 
-                // Prevent refetching if already known (optional optimization, basic for now)
+                // Fetch Partner Name
                 if (!partnerNames[partnerId]) {
                     try {
                         const profile = await getProfileById(partnerId);
@@ -33,12 +38,26 @@ const SessionList = ({ sessions, selectedSessionId, currentUserId, onSelectSessi
                         names[partnerId] = "Unknown User";
                     }
                 }
+
+                // Fetch Skill Name and Status (using logic that sessionId = requestId)
+                if (!skillNames[session.sessionId]) {
+                    try {
+                        const request = await getRequestById(session.sessionId);
+                        skills[session.sessionId] = request.skillName;
+                        statuses[session.sessionId] = request.status;
+                    } catch (e) {
+                        // Fallback if request fetch fails
+                        skills[session.sessionId] = "Session";
+                    }
+                }
             }
             setPartnerNames(prev => ({ ...prev, ...names }));
+            setSkillNames(prev => ({ ...prev, ...skills }));
+            setSessionStatuses(prev => ({ ...prev, ...statuses }));
         };
 
         if (sessions.length > 0) {
-            fetchNames();
+            fetchDetails();
         }
     }, [sessions, currentUserId]);
 
@@ -77,7 +96,9 @@ const SessionList = ({ sessions, selectedSessionId, currentUserId, onSelectSessi
                 ) : (
                     sessions.map((session) => {
                         const partnerId = session.learnerId === currentUserId ? session.teacherId : session.learnerId;
-                        const name = partnerNames[partnerId] || "Loading...";
+                        const partnerName = partnerNames[partnerId] || "Loading...";
+                        const skillName = skillNames[session.sessionId] || "Loading...";
+                        const isCompleted = sessionStatuses[session.sessionId] === "COMPLETED";
                         const unread = unreadCounts[session.id] || 0;
                         const isSelected = selectedSessionId === session.id;
 
@@ -94,12 +115,23 @@ const SessionList = ({ sessions, selectedSessionId, currentUserId, onSelectSessi
                                             <User size={20} />
                                         </div>
                                         <div>
-                                            <h3 className={`font-semibold ${isSelected ? "text-green-400" : "text-white"}`}>
-                                                {name}
+                                            {/* Heading: Course Name */}
+                                            <h3 className={`font-bold text-sm ${isSelected ? "text-green-400" : "text-white"}`}>
+                                                {skillName}
                                             </h3>
-                                            <p className="text-xs text-gray-400 mt-1 truncate w-40">
-                                                {session.progressNotes || "No notes yet..."}
+
+                                            {/* Subtext: Partner Name */}
+                                            <p className="text-xs text-gray-300 font-medium">
+                                                with {partnerName}
                                             </p>
+
+                                            {/* Status Badge if Completed */}
+                                            {isCompleted && (
+                                                <div className="flex items-center gap-1 mt-1 text-green-500">
+                                                    <CheckCircle size={10} />
+                                                    <span className="text-[10px] font-bold uppercase tracking-wide">Completed</span>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
 
