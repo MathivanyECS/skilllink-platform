@@ -10,7 +10,7 @@ import { useState } from "react";
 import { useAuth } from "../../hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import * as collaborationService from "../../services/collaborationService";
+import { applyToPost } from "../../services/collaborationService";
 import { CollabApplicationDTO } from "../../types/collaboration.types";
 
 interface Props {
@@ -55,7 +55,7 @@ const ApplyModal = ({ open, onClose, postId, postTitle, onSuccess }: Props) => {
         message: message.trim() || undefined
       };
 
-      await collaborationService.applyToPost(postId, dto);
+      await applyToPost(postId, dto);
 
       toast.success("Application submitted successfully!");
       setMessage("");
