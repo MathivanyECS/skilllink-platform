@@ -25,6 +25,30 @@ const NotificationDrawer = ({ open, onClose, onUnreadCount }: Props) => {
 
   useEffect(() => {
     if (open) load();
+
+    // 🔥 REAL-TIME WEBSOCKET CONNECTION
+    import("sockjs-client").then(({ default: SockJS }) => {
+      import("@stomp/stompjs").then(({ Stomp }) => {
+        const socket = new SockJS("http://localhost:8080/ws");
+        const stompClient = Stomp.over(socket);
+
+        stompClient.connect({}, () => {
+          const userId = localStorage.getItem("userId"); // Ensure userId is stored in localStorage
+          if (userId) {
+            stompClient.subscribe(`/user/${userId}/queue/notifications`, (message: any) => {
+              const newNotif = JSON.parse(message.body);
+              setNotifications(prev => [newNotif, ...prev]);
+              // Optional: trigger a toast or sound here
+            });
+          }
+        }, (err: any) => console.error("WebSocket Error:", err));
+
+        return () => {
+          if (stompClient && stompClient.connected) stompClient.disconnect();
+        };
+      });
+    });
+
   }, [open]);
 
   const load = async () => {

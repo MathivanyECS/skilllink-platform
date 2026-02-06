@@ -20,7 +20,21 @@ const NotificationDetailModal = ({
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (notification?.metadata?.status) {
+    if (notification?.metadata?.requestId) {
+      // 🔥 FETCH LATEST STATUS TO PREVENT DUPLICATE RESPONSE
+      api.get(`/requests/${notification.metadata.requestId}`)
+        .then(res => {
+          if (res.data && res.data.status) {
+            setStatus(res.data.status);
+          }
+        })
+        .catch(() => {
+          // fallback to metadata status if fetch fails
+          if (notification?.metadata?.status) {
+            setStatus(notification.metadata.status);
+          }
+        });
+    } else if (notification?.metadata?.status) {
       setStatus(notification.metadata.status);
     }
   }, [notification]);
@@ -30,17 +44,45 @@ const NotificationDetailModal = ({
   const meta = notification.metadata || {};
 
   const handleAccept = async () => {
-    setLoading(true);
-    await api.put(`/requests/${meta.requestId}/status?status=ACCEPTED`);
-    setStatus("ACCEPTED");
-    setLoading(false);
+    try {
+      setLoading(true);
+      await api.put(`/requests/${meta.requestId}/status?status=ACCEPTED`);
+      setStatus("ACCEPTED");
+      // 🔥 Trigger update immediately to remove notification from list if needed
+      onUpdated();
+    } catch (err) {
+      console.error("Accept failed", err);
+      // 🔥 Refetch status in case it was already processed
+      fetchStatus();
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleReject = async () => {
-    setLoading(true);
-    await api.put(`/requests/${meta.requestId}/status?status=ngREJECTED`);
-    setStatus("REJECTED");
-    setLoading(false);
+    try {
+      setLoading(true);
+      await api.put(`/requests/${meta.requestId}/status?status=REJECTED`);
+      setStatus("REJECTED");
+      onUpdated();
+    } catch (err) {
+      console.error("Reject failed", err);
+      fetchStatus();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchStatus = () => {
+    if (meta.requestId) {
+      api.get(`/requests/${meta.requestId}`)
+        .then(res => {
+          if (res.data && res.data.status) {
+            setStatus(res.data.status);
+          }
+        })
+        .catch(e => console.error("Fetch status failed", e));
+    }
   };
 
   const closeAndRead = async () => {
@@ -57,20 +99,33 @@ const NotificationDetailModal = ({
         {notification.type === "NEW_REQUEST" && (
           <>
             <h2>Incoming Skill Request</h2>
+            <p style={{ fontSize: 12, color: "#888", marginBottom: 15 }}>
+              {(() => {
+                try {
+                  return new Date(notification.createdAt).toLocaleString("en-GB", {
+                    day: "numeric", month: "short", year: "numeric",
+                    hour: "2-digit", minute: "2-digit"
+                  });
+                } catch (e) {
+                  return "Invalid Date";
+                }
+              })()}
+            </p>
             <p><strong>Student ID:</strong> {meta.studentId || "-"}</p>
             <p><strong>Student Name:</strong> {meta.studentName || "-"}</p>
             <p><strong>Skill:</strong> {meta.skillName || "-"}</p>
             {meta.note && <p><strong>Message:</strong> {meta.note}</p>}
 
+            {/* 🔥 Check LOCAL status state, not just meta logic */}
             {status === "PENDING" && (
               <div style={btnRow}>
                 <button style={acceptBtn} onClick={handleAccept} disabled={loading}>
-                  Accept
+                  {loading ? "Processing..." : "Accept"}
                 </button>
                 <button style={rejectBtn} onClick={handleReject} disabled={loading}>
-                  Reject
+                  {loading ? "Processing..." : "Reject"}
                 </button>
-                <button style={cancelBtn} onClick={closeAndRead}>
+                <button style={cancelBtn} onClick={closeAndRead} disabled={loading}>
                   Cancel
                 </button>
               </div>
@@ -114,22 +169,22 @@ const NotificationDetailModal = ({
         {/* ================= ACCEPT / REJECT (SEEKER) ================= */}
         {(notification.type === "REQUEST_ACCEPTED" ||
           notification.type === "REQUEST_REJECTED") && (
-          <>
-            <h2>Request Status Update</h2>
-            <p><strong>Skill:</strong> {meta.skillName || "-"}</p>
-            <p>
-              <strong>Status:</strong>{" "}
-              <span style={{ color: meta.status === "ACCEPTED" ? "#38AE56" : "#e74c3c" }}>
-                {meta.status}
-              </span>
-            </p>
-            <div style={btnRow}>
-              <button style={cancelBtn} onClick={closeAndRead}>
-                OK
-              </button>
-            </div>
-          </>
-        )}
+            <>
+              <h2>Request Status Update</h2>
+              <p><strong>Skill:</strong> {meta.skillName || "-"}</p>
+              <p>
+                <strong>Status:</strong>{" "}
+                <span style={{ color: meta.status === "ACCEPTED" ? "#38AE56" : "#e74c3c" }}>
+                  {meta.status}
+                </span>
+              </p>
+              <div style={btnRow}>
+                <button style={cancelBtn} onClick={closeAndRead}>
+                  OK
+                </button>
+              </div>
+            </>
+          )}
 
         {/* ================= WISHLIST (UI ENHANCED ONLY) ================= */}
         {notification.type === "WISHLIST_CREATED" && (
