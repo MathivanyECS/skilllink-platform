@@ -25,7 +25,7 @@ const Login = () => {
       localStorage.setItem("token", token);
 
       if (user.role === "ADMIN") {
-        navigate("/admin-dashboard");
+        navigate("/admin");
       } else if (!user.isProfileCompleted) {
         navigate("/create-profile");
       } else {

@@ -18,7 +18,7 @@ const AppRoutes = () => (
     <Route path="/" element={<GetStarted />} />
     <Route path="/login" element={<Login />} />
     <Route path="/dashboard" element={<UserDashboard />} />
-    <Route path="/admin-dashboard" element={<AdminDashboard />} />
+    <Route path="/admin" element={<AdminDashboard />} />
     <Route path="/register" element={<Register />} />
     <Route path="/create-profile" element={<CreateProfile />} />
 
