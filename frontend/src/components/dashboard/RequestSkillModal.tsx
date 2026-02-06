@@ -1,23 +1,33 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import api from "../../services/api";
 
 interface Props {
   open: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  providerId: string; // ✅ UUID for API
+  providerStudentId: string; // ✅ Student ID for Display
+  availableSkills: string[]; // ✅ Receive available skills
 }
 
-const RequestSkillModal = ({ open, onClose, onSuccess }: Props) => {
-  const [providerStudentId, setProviderStudentId] = useState("");
+const RequestSkillModal = ({ open, onClose, onSuccess, providerId, providerStudentId, availableSkills }: Props) => {
   const [skillName, setSkillName] = useState("");
   const [note, setNote] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // ✅ Reset state when modal opens
+  useEffect(() => {
+    if (open) {
+      setSkillName("");
+      setNote("");
+    }
+  }, [open]);
+
   if (!open) return null;
 
   const sendRequest = async () => {
-    if (!providerStudentId.trim() || !skillName.trim()) {
-      alert("Provider ID and Skill Name are required");
+    if (!providerId || !skillName.trim()) {
+      alert("Skill Name is required");
       return;
     }
 
@@ -25,14 +35,10 @@ const RequestSkillModal = ({ open, onClose, onSuccess }: Props) => {
       setLoading(true);
 
       await api.post("/requests", {
-        providerId: providerStudentId, // ✅ STUDENT ID entered by user
+        providerId, // ✅ Use passed providerId (UUID)
         skillName,
         note
       });
-
-      setProviderStudentId("");
-      setSkillName("");
-      setNote("");
 
       onClose();
       onSuccess();
@@ -52,22 +58,32 @@ const RequestSkillModal = ({ open, onClose, onSuccess }: Props) => {
           Send a learning request to connect with a skill provider
         </p>
 
-        {/* ✅ USER ENTERS PROVIDER STUDENT ID */}
+        {/* ✅ USER SEES READ-ONLY PROVIDER ID */}
         <label>Provider Student ID</label>
         <input
           value={providerStudentId}
-          onChange={e => setProviderStudentId(e.target.value)}
-          style={input}
-          placeholder="Enter provider student ID"
+          disabled
+          style={{ ...input, opacity: 0.6, cursor: "not-allowed" }}
         />
 
         <label>Skill Name</label>
-        <input
+        {/* ✅ DROPDOWN FOR SKILLS */}
+        <select
           value={skillName}
           onChange={e => setSkillName(e.target.value)}
-          style={input}
-          placeholder="Enter skill name"
-        />
+          style={input} // Use same style as input
+        >
+          <option value="">Select a skill...</option>
+          {availableSkills && availableSkills.length > 0 ? (
+            availableSkills.map((skill) => (
+              <option key={skill} value={skill}>
+                {skill}
+              </option>
+            ))
+          ) : (
+            <option disabled>No skills available</option>
+          )}
+        </select>
 
         <label>Message / Note</label>
         <textarea
