@@ -3,7 +3,7 @@ export interface SessionBoard {
     sessionId: string;
     learnerId: string;
     teacherId: string;
-    meetingDateTime?: string; // LocalDateTime string
+    meetingDateTime?: string | number[]; // LocalDateTime string or array
     meetingLocation?: string;
     progressNotes?: string;
     lastMessageAt?: string; // LocalDateTime string
@@ -19,7 +19,7 @@ export interface Message {
     content: string;
     messageType: "TEXT" | "MEETING_SCHEDULE" | "PROGRESS_UPDATE" | string;
     isRead: boolean;
-    timestamp: string; // LocalDateTime string
+    timestamp: string | number[]; // LocalDateTime string or array
 }
 
 export interface SendMessageRequest {
