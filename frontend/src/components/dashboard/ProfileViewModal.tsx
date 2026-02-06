@@ -1,5 +1,9 @@
 import api from "../../services/api";
 import { useEffect, useState } from "react";
+import { Star, User } from "lucide-react";
+import { getReviewsByUser } from "../../services/reviewService";
+import { getProfileById } from "../../services/profileService";
+import { Review } from "../../types/review.types";
 
 interface Props {
   open: boolean;
@@ -10,12 +14,41 @@ interface Props {
 const ProfileViewModal = ({ open, userId, onClose }: Props) => {
   const [profile, setProfile] = useState<any>(null);
   const [rating, setRating] = useState(0);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [reviewCount, setReviewCount] = useState(0);
+  const [reviewerNames, setReviewerNames] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (open && userId) {
+      // 1. Fetch Profile
       api.get(`/profiles/${userId}`).then(res => setProfile(res.data));
+
+      // 2. Fetch Average Rating for this user
       api.get(`/reviews/user/${userId}/average-rating`)
         .then(r => setRating(r.data ?? 0));
+
+      // 3. Fetch List of Reviews
+      getReviewsByUser(userId).then(async (data) => {
+        setReviews(data);
+        setReviewCount(data.length);
+
+        // 4. Fetch Names for Reviewers (since ReviewDTO only has IDs)
+        // Groups unique reviewer IDs to avoid redundant API calls
+        const uniqueReviewerIds = Array.from(new Set(data.map(r => r.reviewerId)));
+        const names: Record<string, string> = {};
+
+        await Promise.all(uniqueReviewerIds.map(async (id) => {
+          try {
+            const p = await getProfileById(id);
+            names[id] = p.fullName;
+          } catch (e) {
+            console.error("Failed to fetch reviewer profile", e);
+            names[id] = "Unknown Student";
+          }
+        }));
+
+        setReviewerNames(names);
+      });
     }
   }, [open, userId]);
 
@@ -57,8 +90,8 @@ const ProfileViewModal = ({ open, userId, onClose }: Props) => {
           <div style={pillBox}>
             {profile.skillsToLearn?.length
               ? profile.skillsToLearn.map((s: string) => (
-                  <span key={s} style={pill}>{s}</span>
-                ))
+                <span key={s} style={pill}>{s}</span>
+              ))
               : <span style={muted}>Not specified</span>}
           </div>
         </div>
@@ -68,16 +101,47 @@ const ProfileViewModal = ({ open, userId, onClose }: Props) => {
           <div style={pillBox}>
             {profile.skillsToTeach?.length
               ? profile.skillsToTeach.map((s: any) => (
-                  <span key={s.skillName} style={pill}>{s.skillName}</span>
-                ))
+                <span key={s.skillName} style={pill}>{s.skillName}</span>
+              ))
               : <span style={muted}>Not specified</span>}
           </div>
         </div>
 
         {/* RATING */}
         <div style={ratingBox}>
-          <span style={ratingValue}>{rating.toFixed(1)}</span>
-          <span style={ratingOutOf}> / 5.0</span>
+          <div>
+            <span style={ratingValue}>{rating.toFixed(1)}</span>
+            <span style={ratingOutOf}> / 5.0</span>
+          </div>
+          <span style={reviewCountStyle}>({reviewCount} reviews)</span>
+        </div>
+
+        {/* REVIEWS LIST */}
+        <div style={section}>
+          <h3 style={sectionTitle}>Recent Reviews</h3>
+          <div style={reviewsContainer}>
+            {reviews.length > 0 ? (
+              reviews.map((review) => (
+                <div key={review.id} style={reviewCard}>
+                  <div style={reviewHeader}>
+                    <div style={reviewerInfo}>
+                      <div style={avatarParams}>
+                        <User size={14} color="#fff" />
+                      </div>
+                      <span style={reviewerName}>{reviewerNames[review.reviewerId] || "Loading..."}</span>
+                    </div>
+                    <div style={starRow}>
+                      <Star size={12} className="fill-yellow-500 text-yellow-500" />
+                      <span style={starVal}>{review.rating}</span>
+                    </div>
+                  </div>
+                  <p style={reviewText}>{review.reviewText}</p>
+                </div>
+              ))
+            ) : (
+              <p style={muted}>No reviews yet.</p>
+            )}
+          </div>
         </div>
 
         {/* ACTION */}
@@ -182,7 +246,77 @@ const muted = {
 const ratingBox = {
   fontSize: 22,
   fontWeight: 700,
-  marginBottom: 28
+  marginBottom: 28,
+  display: "flex",
+  alignItems: "center",
+  gap: 12
+};
+
+const reviewCountStyle = {
+  fontSize: 14,
+  fontWeight: 400,
+  opacity: 0.6
+};
+
+const reviewsContainer = {
+  display: "flex",
+  flexDirection: "column" as const,
+  gap: 12,
+  maxHeight: 200,
+  overflowY: "auto" as const,
+  paddingRight: 8
+};
+
+const reviewCard = {
+  background: "rgba(255,255,255,0.05)",
+  borderRadius: 8,
+  padding: 12
+};
+
+const reviewHeader = {
+  display: "flex",
+  justifyContent: "space-between",
+  marginBottom: 6
+};
+
+const reviewerInfo = {
+  display: "flex",
+  alignItems: "center",
+  gap: 8
+};
+
+const avatarParams = {
+  width: 24,
+  height: 24,
+  borderRadius: "50%",
+  background: "#444",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center"
+};
+
+const reviewerName = {
+  fontSize: 13,
+  fontWeight: 600,
+  color: "#e0e0e0"
+};
+
+const starRow = {
+  display: "flex",
+  alignItems: "center",
+  gap: 4
+};
+
+const starVal = {
+  fontSize: 13,
+  fontWeight: 700,
+  color: "#FFCA28" // Yellow
+};
+
+const reviewText = {
+  fontSize: 13,
+  color: "#bbb",
+  lineHeight: 1.4
 };
 
 const ratingValue = {
