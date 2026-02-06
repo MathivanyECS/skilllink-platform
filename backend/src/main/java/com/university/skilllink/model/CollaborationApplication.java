@@ -17,9 +17,10 @@ public class CollaborationApplication {
     @Id
     private String id;
 
-    private String postId;        // CollaborationPost.id
-    private String applicantId;   // userId of applicant
-    private String message;       // optional applicant message
+    private String postId; // CollaborationPost.id
+    private String applicantId; // userId of applicant
+    private String message; // optional applicant message
+    private java.util.List<String> skills; // applicant's skills
 
     private ApplicationStatus status; // PENDING, ACCEPTED, REJECTED
 

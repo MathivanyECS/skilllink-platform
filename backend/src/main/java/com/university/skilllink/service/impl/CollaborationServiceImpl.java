@@ -51,8 +51,7 @@ public class CollaborationServiceImpl implements CollaborationService {
                         userId,
                         NotificationType.CONNECT.name() +
                                 "A new collaboration post has been created: " + post.getTitle(),
-                        "/collaborations/" + savedPost.getId()
-                );
+                        "/collaborations/" + savedPost.getId());
             }
         }
 
@@ -97,8 +96,7 @@ public class CollaborationServiceImpl implements CollaborationService {
                     a.getApplicantId(),
                     NotificationType.CONNECT.name()
                             + " - A collaboration post you applied for was deleted by the creator.",
-                    "/collaborations/" + postId
-            );
+                    "/collaborations/" + postId);
         }
 
         appRepo.deleteAll(apps);
@@ -120,6 +118,7 @@ public class CollaborationServiceImpl implements CollaborationService {
                 .postId(postId)
                 .applicantId(applicantUserId)
                 .message(dto.getMessage())
+                .skills(dto.getSkills())
                 .status(CollaborationApplication.ApplicationStatus.PENDING)
                 .appliedAt(LocalDateTime.now())
                 .build();
@@ -135,8 +134,7 @@ public class CollaborationServiceImpl implements CollaborationService {
                 post.getCreatedBy(),
                 NotificationType.NEW_REQUEST.name() + " - "
                         + applicantName + " applied to your collaboration post: " + post.getTitle(),
-                "/collaborations/" + post.getId()
-        );
+                "/collaborations/" + post.getId());
 
         return savedApp;
     }
@@ -150,7 +148,8 @@ public class CollaborationServiceImpl implements CollaborationService {
     }
 
     @Override
-    public CollaborationApplication respondToApplication(String postId, String applicationId, String userId, boolean accept) {
+    public CollaborationApplication respondToApplication(String postId, String applicationId, String userId,
+            boolean accept) {
         CollaborationPost post = getPostById(postId);
         if (!post.getCreatedBy().equals(userId))
             throw new ForbiddenException("Only creator can respond");
@@ -161,7 +160,8 @@ public class CollaborationServiceImpl implements CollaborationService {
         if (!app.getPostId().equals(postId))
             throw new ForbiddenException("Application does not belong to this post");
 
-        app.setStatus(accept ? CollaborationApplication.ApplicationStatus.ACCEPTED : CollaborationApplication.ApplicationStatus.REJECTED);
+        app.setStatus(accept ? CollaborationApplication.ApplicationStatus.ACCEPTED
+                : CollaborationApplication.ApplicationStatus.REJECTED);
         app.setRespondedAt(LocalDateTime.now());
         CollaborationApplication savedApp = appRepo.save(app);
 
@@ -169,9 +169,8 @@ public class CollaborationServiceImpl implements CollaborationService {
                 app.getApplicantId(),
                 (accept ? NotificationType.REQUEST_ACCEPTED : NotificationType.REQUEST_REJECTED).name()
                         + " - " + (accept ? "Your application to '" + post.getTitle() + "' was accepted."
-                        : "Your application to '" + post.getTitle() + "' was rejected by the post creator."),
-                "/collaborations/" + post.getId()
-        );
+                                : "Your application to '" + post.getTitle() + "' was rejected by the post creator."),
+                "/collaborations/" + post.getId());
 
         if (accept) {
             post.setStatus("FILLED");
@@ -195,8 +194,7 @@ public class CollaborationServiceImpl implements CollaborationService {
                     a.getApplicantId(),
                     NotificationType.CONNECT.name() +
                             "The collaboration post you applied for has been closed by the creator.",
-                    "/collaborations/" + postId
-            );
+                    "/collaborations/" + postId);
         }
 
         return postRepo.save(post);
@@ -223,8 +221,7 @@ public class CollaborationServiceImpl implements CollaborationService {
             notificationService.send(
                     a.getApplicantId(),
                     "Your collaboration application for post '" + post.getTitle() + "' has been deleted by admin.",
-                    "/collaborations/" + postId
-            );
+                    "/collaborations/" + postId);
         }
         appRepo.deleteAll(apps);
         postRepo.delete(post);

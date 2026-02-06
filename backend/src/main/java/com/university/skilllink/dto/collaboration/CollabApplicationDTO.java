@@ -5,4 +5,5 @@ import lombok.Data;
 @Data
 public class CollabApplicationDTO {
     private String message;
+    private java.util.List<String> skills;
 }
