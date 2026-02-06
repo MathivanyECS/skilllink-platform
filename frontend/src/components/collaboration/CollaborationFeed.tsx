@@ -122,9 +122,9 @@ const CollaborationFeed = () => {
           </p>
 
           <div style={heroPoints}>
-            <span style={pointItem}>🤝 Work on group projects</span>
-            <span style={pointItem}>🚀 Join competitions & events</span>
-            <span style={pointItem}>🧠 Share skills, grow together</span>
+            <span style={pointItem}>Work on group projects</span>
+            <span style={pointItem}>Join competitions & events</span>
+            <span style={pointItem}>Share skills, grow together</span>
           </div>
 
           {isAuthenticated && (
