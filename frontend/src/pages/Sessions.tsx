@@ -129,6 +129,7 @@ const Sessions = () => {
           selectedSessionId={selectedSessionId}
           currentUserId={currentUserId}
           onSelectSession={setSelectedSessionId}
+          onRefresh={handleSessionUpdate}
         />
 
         {/* RIGHT MAIN: Chat Board */}
