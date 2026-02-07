@@ -3,6 +3,33 @@ import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 import { useEffect, useState } from "react";
 
+/* ================= CONSTANTS ================= */
+
+const DEFAULT_AVATAR =
+  "https://cdn-icons-png.flaticon.com/512/149/149071.png";
+
+const DEPARTMENTS = [
+  "Computer Science",
+  "Electronics",
+  "Chemistry",
+  "Industrial Management",
+  "Mathematics",
+  "Microbiology",
+  "Physics",
+  "Plant and Molecular biology",
+  "Zoology and Environmental Management",
+  "Statistics",
+];
+
+const YEARS = [
+  { label: "1st Year", value: 1 },
+  { label: "2nd Year", value: 2 },
+  { label: "3rd Year", value: 3 },
+  { label: "4th Year", value: 4 },
+];
+
+/* ================= TYPES ================= */
+
 type SkillToTeach = {
   skillName: string;
   proficiency: "BEGINNER" | "INTERMEDIATE" | "ADVANCED" | "EXPERT";
@@ -18,8 +45,7 @@ type ProfileFormData = {
   skillsToLearn: string[];
 };
 
-const DEFAULT_AVATAR =
-  "https://cdn-icons-png.flaticon.com/512/149/149071.png";
+/* ================= COMPONENT ================= */
 
 const CreateProfile = () => {
   const navigate = useNavigate();
@@ -28,7 +54,7 @@ const CreateProfile = () => {
   const [loading, setLoading] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
 
-  // 🔹 image states
+  // Image states
   const [profileImage, setProfileImage] = useState<File | null>(null);
   const [existingImage, setExistingImage] = useState<string | null>(null);
 
@@ -41,6 +67,10 @@ const CreateProfile = () => {
     reset,
   } = useForm<ProfileFormData>({
     defaultValues: {
+      department: "",
+      yearOfStudy: 1,
+      bio: "",
+      phoneNumber: "",
       skillsToTeach: [
         { skillName: "", proficiency: "BEGINNER", yearsOfExperience: 0 },
       ],
@@ -53,10 +83,10 @@ const CreateProfile = () => {
     name: "skillsToTeach",
   });
 
-  // 🔹 load profile for edit mode
+  /* ================= LOAD PROFILE (EDIT MODE) ================= */
+
   useEffect(() => {
-    api
-      .get("/profiles/me")
+    api.get("/profiles/me")
       .then(res => {
         reset({
           department: res.data.department || "",
@@ -84,14 +114,18 @@ const CreateProfile = () => {
       });
   }, [reset]);
 
+  /* ================= SUBMIT ================= */
+
   const onSubmit = async (data: ProfileFormData) => {
     setLoading(true);
     setErrorMsg("");
 
     try {
-      let imageUrl = existingImage;
+      let imageUrl = existingImage
+        ? existingImage.replace("http://localhost:8081", "")
+        : null;
 
-      // 🔹 upload image if user selected one
+      // Upload image if selected
       if (profileImage) {
         const formData = new FormData();
         formData.append("file", profileImage);
@@ -102,11 +136,11 @@ const CreateProfile = () => {
           { headers: { "Content-Type": "multipart/form-data" } }
         );
 
-        imageUrl = imgRes.data.profileImageUrl;
+        imageUrl = imgRes.data.profilePicture;
       }
 
       const payload = {
-        department: data.department.trim(),
+        department: data.department,
         yearOfStudy: Number(data.yearOfStudy),
         bio: data.bio.trim(),
         phoneNumber: data.phoneNumber.trim(),
@@ -130,12 +164,14 @@ const CreateProfile = () => {
       }
 
       navigate("/dashboard");
-    } catch (err: any) {
+    } catch {
       setErrorMsg("Failed to save profile");
     } finally {
       setLoading(false);
     }
   };
+
+  /* ================= UI ================= */
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-green-950 to-black text-white flex items-center justify-center">
@@ -149,58 +185,57 @@ const CreateProfile = () => {
           Tell us about yourself so we can personalize your experience.
         </p>
 
-        {/* hidden image input */}
+        {/* Hidden image input */}
         <input
           type="file"
           accept="image/*"
           hidden
           id="profileImageInput"
-          onChange={e => {
-            if (e.target.files?.[0]) {
-              setProfileImage(e.target.files[0]);
-            }
-          }}
+          onChange={e => e.target.files && setProfileImage(e.target.files[0])}
         />
 
         <form onSubmit={handleSubmit(onSubmit)} className="grid md:grid-cols-2 gap-10">
 
           {/* LEFT */}
           <div className="bg-black/40 p-6 rounded-2xl border border-green-500/20 space-y-6">
-            <h2 className="text-xl font-semibold">Basic Information</h2>
 
             {/* PROFILE IMAGE */}
             <div className="flex flex-col items-center gap-3">
               <div
-                onClick={() =>
-                  document.getElementById("profileImageInput")?.click()
-                }
+                onClick={() => document.getElementById("profileImageInput")?.click()}
                 className="w-28 h-28 rounded-full border-2 border-green-400 cursor-pointer"
                 style={{
                   backgroundImage: `url(${profileImage
                     ? URL.createObjectURL(profileImage)
-                    : existingImage || DEFAULT_AVATAR
-                    })`,
+                    : existingImage || DEFAULT_AVATAR})`,
                   backgroundSize: "cover",
                   backgroundPosition: "center",
                 }}
               />
-              <span className="text-green-400 text-sm">
-                Change Photo
-              </span>
+              <span className="text-green-400 text-sm">Change Photo</span>
             </div>
 
-            <input
-              {...register("department")}
-              placeholder="Department"
+            {/* DEPARTMENT */}
+            <select
+              {...register("department", { required: true })}
               className="w-full px-4 py-3 bg-black border border-gray-700 rounded-lg"
-            />
+            >
+              <option value="">Select Department</option>
+              {DEPARTMENTS.map(dep => (
+                <option key={dep} value={dep}>{dep}</option>
+              ))}
+            </select>
 
-            <input
-              type="number"
-              {...register("yearOfStudy")}
-              placeholder="Year of Study"
+            {/* YEAR */}
+            <select
+              {...register("yearOfStudy", { valueAsNumber: true, required: true })}
               className="w-full px-4 py-3 bg-black border border-gray-700 rounded-lg"
-            />
+            >
+              <option value="">Select Year</option>
+              {YEARS.map(y => (
+                <option key={y.value} value={y.value}>{y.label}</option>
+              ))}
+            </select>
 
             <input
               {...register("phoneNumber")}
@@ -227,7 +262,6 @@ const CreateProfile = () => {
                   placeholder="Skill"
                   className="bg-black border border-gray-700 px-3 py-2 rounded"
                 />
-
                 <select
                   {...register(`skillsToTeach.${index}.proficiency`)}
                   className="bg-black border border-gray-700 px-3 py-2 rounded"
@@ -236,11 +270,9 @@ const CreateProfile = () => {
                   <option value="INTERMEDIATE">Intermediate</option>
                   <option value="ADVANCED">Advanced</option>
                 </select>
-
                 <input
                   type="number"
                   {...register(`skillsToTeach.${index}.yearsOfExperience`)}
-                  placeholder="Years"
                   className="bg-black border border-gray-700 px-3 py-2 rounded"
                 />
               </div>
@@ -248,13 +280,7 @@ const CreateProfile = () => {
 
             <button
               type="button"
-              onClick={() =>
-                append({
-                  skillName: "",
-                  proficiency: "BEGINNER",
-                  yearsOfExperience: 0,
-                })
-              }
+              onClick={() => append({ skillName: "", proficiency: "BEGINNER", yearsOfExperience: 0 })}
               className="text-green-400 text-sm"
             >
               + Add Skill
@@ -266,16 +292,13 @@ const CreateProfile = () => {
               <input
                 key={index}
                 {...register(`skillsToLearn.${index}`)}
-                placeholder="Skill name"
                 className="w-full px-4 py-2 bg-black border border-gray-700 rounded"
               />
             ))}
 
             <button
               type="button"
-              onClick={() =>
-                setValue("skillsToLearn", [...watch("skillsToLearn"), ""])
-              }
+              onClick={() => setValue("skillsToLearn", [...watch("skillsToLearn"), ""])}
               className="text-green-400 text-sm"
             >
               + Add Learning Goal
@@ -286,16 +309,14 @@ const CreateProfile = () => {
             <button
               type="submit"
               disabled={loading}
-              className="px-12 py-3 bg-green-500 text-black rounded-lg font-semibold hover:bg-green-400 transition"
+              className="px-12 py-3 bg-green-500 text-black rounded-lg font-semibold"
             >
               {loading ? "Saving..." : "Complete Profile"}
             </button>
           </div>
 
           {errorMsg && (
-            <p className="md:col-span-2 text-center text-red-400">
-              {errorMsg}
-            </p>
+            <p className="md:col-span-2 text-center text-red-400">{errorMsg}</p>
           )}
         </form>
       </div>
