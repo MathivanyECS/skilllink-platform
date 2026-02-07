@@ -103,6 +103,14 @@ public class SessionBoardServiceImpl implements SessionBoardService {
         return convertToDTO(updated);
     }
     
+    @Override
+    public void deleteSessionBoard(String id) {
+        if (!sessionBoardRepository.existsById(id)) {
+            throw new RuntimeException("Session board not found");
+        }
+        sessionBoardRepository.deleteById(id);
+    }
+    
     private SessionBoardDTO convertToDTO(SessionBoard sessionBoard) {
         SessionBoardDTO dto = new SessionBoardDTO();
         dto.setId(sessionBoard.getId());
