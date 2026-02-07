@@ -8,7 +8,7 @@ import AdminDashboard from "../pages/AdminDashboard";
 import CreateProfile from "../pages/CreateProfile";
 
 // ✅ NEW imports (added)
-import EditProfile from "../pages/EditProfile";
+
 import Sessions from "../pages/Sessions";
 import Collaboration from "../pages/Collaboration";
 
@@ -21,11 +21,10 @@ const AppRoutes = () => (
     <Route path="/admin-dashboard" element={<AdminDashboard />} />
     <Route path="/register" element={<Register />} />
     <Route path="/create-profile" element={<CreateProfile />} />
-
-    {/* ✅ NEW routes for Profile Dropdown */}
-    <Route path="/edit-profile" element={<EditProfile />} />
     <Route path="/sessions" element={<Sessions />} />
     <Route path="/collaboration" element={<Collaboration />} />
+    <Route path="/profile" element={<CreateProfile />} />
+
   </Routes>
 );
 
