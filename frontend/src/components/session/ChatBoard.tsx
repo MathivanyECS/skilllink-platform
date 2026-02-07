@@ -128,9 +128,9 @@ const ChatBoard = ({ session, currentUserId, onSessionUpdate }: ChatBoardProps) 
     };
 
     return (
-        <div className="flex-1 flex flex-col h-full bg-black/20 relative">
+        <div className="flex-1 flex flex-col h-[calc(100%-2rem)] m-4 bg-gray-900/60 backdrop-blur-xl border border-white/10 shadow-2xl rounded-2xl relative overflow-hidden">
             {/* Header */}
-            <div className="p-4 border-b border-gray-700 flex justify-between items-center bg-black/40">
+            <div className="p-4 border-b border-white/10 flex justify-between items-center bg-white/5">
                 <div className="flex items-center gap-4">
                     {/* Back Button - Always visible now */}
                     <button
@@ -240,14 +240,14 @@ const ChatBoard = ({ session, currentUserId, onSessionUpdate }: ChatBoardProps) 
                     </div>
 
                     {/* Input Area */}
-                    <div className="p-4 bg-black/40 border-t border-gray-700">
+                    <div className="p-4 bg-white/5 border-t border-white/10">
                         <div className="flex gap-2">
                             <input
                                 value={newMessage}
                                 onChange={(e) => setNewMessage(e.target.value)}
                                 onKeyDown={handleKeyDown}
                                 placeholder="Type a message..."
-                                className="flex-1 bg-gray-800 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-1 focus:ring-green-500 border border-gray-700"
+                                className="flex-1 bg-black/40 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-1 focus:ring-green-500 border border-white/10 placeholder-gray-500"
                             />
                             <button
                                 onClick={handleSend}
@@ -261,7 +261,7 @@ const ChatBoard = ({ session, currentUserId, onSessionUpdate }: ChatBoardProps) 
 
                 {/* Notes Panel (Side Overlay) */}
                 {isNotesOpen && (
-                    <div className="w-80 border-l border-gray-700 bg-black/60 backdrop-blur-md absolute right-0 top-0 bottom-0 z-10">
+                    <div className="w-80 border-l border-white/10 bg-black/60 backdrop-blur-md absolute right-0 top-0 bottom-0 z-10">
                         <NotesPanel session={session} onClose={() => setIsNotesOpen(false)} onUpdate={onSessionUpdate} />
                     </div>
                 )}
