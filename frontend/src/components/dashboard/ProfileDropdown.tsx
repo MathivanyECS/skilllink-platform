@@ -1,4 +1,7 @@
 import { useNavigate } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+import { jwtDecode } from "jwt-decode";
+import ProfileViewModal from "./ProfileViewModal";
 
 interface Props {
   onClose: () => void;
@@ -6,6 +9,34 @@ interface Props {
 
 const ProfileDropdown = ({ onClose }: Props) => {
   const navigate = useNavigate();
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        onClose();
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [onClose]);
+
+  // Decode token to get current user ID
+  const getTokenUserId = () => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      try {
+        const decoded: any = jwtDecode(token);
+        return decoded.userId || decoded.sub;
+      } catch (e) {
+        console.error("Failed to decode token", e);
+      }
+    }
+    return null;
+  };
 
   const handleNavigate = (path: string) => {
     onClose();
@@ -18,11 +49,24 @@ const ProfileDropdown = ({ onClose }: Props) => {
   };
 
   return (
-    <div style={dropdownStyle}>
-      <div style={itemStyle} onClick={() => handleNavigate("/profile")}>
+
+    <div style={dropdownStyle} ref={dropdownRef}>
+      <div style={itemStyle} onClick={() => handleNavigate("/edit-profile")}>
         Edit Profile
       </div>
 
+
+      <div style={divider} />
+      <div style={divider} />
+      <div style={itemStyle} onClick={() => {
+        const userId = getTokenUserId();
+        if (userId) {
+          setCurrentUserId(userId);
+          setShowProfileModal(true);
+        }
+      }}>
+        View Profile
+      </div>
 
       <div style={divider} />
 
@@ -41,6 +85,13 @@ const ProfileDropdown = ({ onClose }: Props) => {
       <div style={{ ...itemStyle, ...logoutStyle }} onClick={handleLogout}>
         Logout
       </div>
+
+      {/* Profile View Modal - Reused from Dashboard */}
+      <ProfileViewModal
+        open={showProfileModal}
+        userId={currentUserId}
+        onClose={() => setShowProfileModal(false)}
+      />
     </div>
   );
 };

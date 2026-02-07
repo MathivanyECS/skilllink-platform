@@ -233,9 +233,12 @@ const CreateProfile = () => {
             >
               <option value="">Select Year</option>
               {YEARS.map(y => (
-                <option key={y.value} value={y.value}>{y.label}</option>
+                <option key={y.value} value={y.value}>
+                  {y.label}
+                </option>
               ))}
             </select>
+
 
             <input
               {...register("phoneNumber")}

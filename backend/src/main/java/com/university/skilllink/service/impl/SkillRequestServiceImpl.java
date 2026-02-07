@@ -59,6 +59,7 @@ public class SkillRequestServiceImpl implements RequestService {
 
         // ======================================================
         // 🔔 PROVIDER NOTIFICATION (NEW REQUEST)
+        // Checks if provider exists and sends real-time notification
         // ======================================================
         Map<String, String> meta = new HashMap<>();
         meta.put("requestId", saved.getId());
@@ -128,6 +129,8 @@ public class SkillRequestServiceImpl implements RequestService {
         }
 
         // 🔥 PREVENT DUPLICATE RESPONSES
+        // Ensure request is still PENDING before processing
+        // This avoids race conditions where multiple accept/reject calls happen
         if (req.getStatus() != SkillRequest.RequestStatus.PENDING) {
             throw new RuntimeException("Request has already been processed as " + req.getStatus());
         }

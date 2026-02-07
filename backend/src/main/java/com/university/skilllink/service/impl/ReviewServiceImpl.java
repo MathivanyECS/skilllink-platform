@@ -15,6 +15,10 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Service Implementation for Review Management
+ * Handles business logic for creating, retrieving, and calculating ratings.
+ */
 @Service
 @RequiredArgsConstructor
 public class ReviewServiceImpl implements ReviewService {
@@ -152,7 +156,9 @@ public class ReviewServiceImpl implements ReviewService {
     
     @Override
     public Double calculateAverageRating(String userId) {
+        // Use MongoDB aggregation (via repository) to calculate average
         ReviewRepository.RatingStats stats = reviewRepository.getRatingStatsByReviewedId(userId);
+        // Return 0.0 if no reviews exist
         return stats != null ? stats.getAverage() : 0.0;
     }
     

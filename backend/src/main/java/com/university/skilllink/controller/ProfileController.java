@@ -25,32 +25,33 @@ public class ProfileController {
     private final UserService userService;
 
     // =========================================================
-    // 🧠 AI FEATURE 1: SEMANTIC SKILL CATEGORIES
+    //  AI FEATURE 1: SEMANTIC SKILL CATEGORIES
     // High-level concepts → real skills
     // =========================================================
     private static final Map<String, List<String>> SKILL_SYNONYMS = Map.of(
             "frontend", List.of("react", "angular", "vue", "html", "css", "javascript"),
             "backend", List.of("java", "spring", "node", "django", "express"),
             "mobile", List.of("android", "ios", "flutter", "react native"),
-            "data", List.of("data science", "data analysis", "sql", "python"),
+            "data", List.of("data science", "data analysis", "sql", "python","data base"),
             "ai", List.of("machine learning", "deep learning", "ml", "nlp"),
 
-            // 🧠 SOFT SKILLS (VERY IMPORTANT FOR MARKS)
+            //  SOFT SKILLS 
             "communication", List.of("english", "presentation", "public speaking"),
             "english", List.of("communication", "presentation", "writing"),
             "presentation", List.of("communication", "english", "speaking"));
 
     // =========================================================
-    // 🧠 AI FEATURE 2: FUZZY MATCH (typos + case)
+    // AI FEATURE 2: FUZZY MATCH (typos + case)
     // =========================================================
     private boolean fuzzyMatch(String a, String b) {
-        a = a.toLowerCase();
-        b = b.toLowerCase();
-        return a.contains(b) || b.contains(a);
-    }
+    a = a.toLowerCase().replaceAll("\\s+", "");
+    b = b.toLowerCase().replaceAll("\\s+", "");
+    return a.contains(b) || b.contains(a);
+}
+
 
     // =========================================================
-    // 🧠 AI FEATURE 3: PREFIX INTELLIGENCE
+    // AI FEATURE 3: PREFIX INTELLIGENCE
     // Example: "r" → react, rust
     // =========================================================
     private boolean prefixMatch(String skillName, String input) {

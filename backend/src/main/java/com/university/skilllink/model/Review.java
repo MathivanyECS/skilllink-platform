@@ -19,12 +19,16 @@ public class Review {
     private String sessionId; // References learning_sessions._id
     private String reviewerId; // Learner who gives review
     private String reviewedId; // Teacher who receives review
-    private Integer rating; // 1-5 stars
-    private String reviewText;
+    private Integer rating; // 1-5 stars (Mandatory)
+    private String reviewText; // Text feedback (Mandatory)
+    
+    // Detailed ratings (Optional)
     private Integer helpfulnessRating;
     private Integer communicationRating; 
     private Integer knowledgeRating;
-    private Boolean isPublic = true;
+    
+    private Boolean isPublic = true; // Whether review is visible on profile
+    
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }
