@@ -95,7 +95,7 @@ const ChatBoard = ({ session, currentUserId, onSessionUpdate }: ChatBoardProps) 
         }
     };
 
-    const handleKeyDown = (e: React.KeyboardEvent) => {
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault();
             handleSend();
@@ -278,7 +278,7 @@ const ChatBoard = ({ session, currentUserId, onSessionUpdate }: ChatBoardProps) 
             {/* Review Modal - Opened by "Review Session" button */}
             {isReviewModalOpen && (
                 <ReviewModal
-                    sessionId={session.id}
+                    sessionId={session.sessionId}
                     teacherId={session.teacherId}
                     onClose={() => setIsReviewModalOpen(false)}
                     onReviewSubmitted={() => {
