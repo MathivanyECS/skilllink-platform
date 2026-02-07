@@ -41,6 +41,9 @@ public class SkillRequestController {
                 return ResponseEntity.status(401).build();
         }
 
+        // MAIN: Handle request creation
+        // 1. If auth is present, use authenticated user's ID
+        // 2. If no auth (dev mode), use seekerId from DTO
         // At this point seekerId must be the canonical user.id (from users collection)
         SkillRequest req = requestService.sendRequest(seekerId, dto.getProviderId(), dto.getSkillName(), dto.getNote());
         return ResponseEntity.status(201).body(req);
@@ -57,6 +60,7 @@ public class SkillRequestController {
         }
 
         String email = auth.getName();
+        // DEBUG: Trace which user is calling this endpoint
         System.out.println("[DEBUG] /incoming called by auth.email=" + email);
 
         var user = userService.getUserByEmail(email);
@@ -65,7 +69,8 @@ public class SkillRequestController {
             return ResponseEntity.ok(List.of()); // keep safe response
         }
 
-        // Try canonical id first
+        // LOGIC: Try to find requests using the user's canonical ID first (most reliable)
+        // This handles cases where providerId in requests matches user._id
         String userId = user.getId();
         System.out.println("[DEBUG] trying providerId (canonical) = " + userId);
         var list = requestService.getIncomingRequests(userId);
@@ -74,7 +79,8 @@ public class SkillRequestController {
             return ResponseEntity.ok(list);
         }
 
-        // If nothing, try studentId (or other identifier stored in your requests)
+        // LOGIC: Fallback to studentId matching
+        // This handles cases where requests were created using studentId as providerIdentifier
         // NOTE: replace getStudentId() with the actual field name if different
         try {
             String studentId = (String) user.getClass().getMethod("getStudentId").invoke(user);
@@ -101,6 +107,11 @@ public class SkillRequestController {
         if (auth == null || !auth.isAuthenticated())
             return ResponseEntity.status(401).build();
         String email = auth.getName();
+        var user = userService.getUserByEmail(email);
+        if (user == null)
+            return ResponseEntity.status(401).build();
+        
+        return ResponseEntity.ok(requestService.getSentRequests(user.getId()));
     }
 
     @GetMapping("/{requestId}")
@@ -156,17 +167,5 @@ public class SkillRequestController {
         return ResponseEntity.ok(list);
     }
 
-    /**
-     * Get request by ID (for Session Board skill name fetching)
-     */
-    @GetMapping("/{requestId}")
-    public ResponseEntity<SkillRequest> getRequestById(@PathVariable String requestId, Authentication auth) {
-        // Authenticated users can fetch request details
-        // In a real app, I should check if user is participant (seeker or provider)
-        // For now, assuming if they have ID they can read it (like session board)
-        
-        return requestService.getById(requestId)
-            .map(ResponseEntity::ok)
-            .orElse(ResponseEntity.notFound().build());
-    }
+
 }
