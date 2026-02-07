@@ -69,6 +69,13 @@ public class SessionBoardController {
         return ResponseEntity.ok(sessionBoard);
     }
 
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteSessionBoard(@PathVariable String id) {
+        sessionBoardService.deleteSessionBoard(id);
+        return ResponseEntity.noContent().build();
+    }
+
+
     // ✅ UPDATED ENDPOINT WITH VALIDATION
     @PostMapping("/create-from-request")
     public ResponseEntity<SessionBoardDTO> createFromRequest(@RequestBody Map<String, String> requestData) {

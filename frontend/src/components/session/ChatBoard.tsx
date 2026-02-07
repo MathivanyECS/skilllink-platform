@@ -279,6 +279,7 @@ const ChatBoard = ({ session, currentUserId, onSessionUpdate }: ChatBoardProps) 
             {isReviewModalOpen && (
                 <ReviewModal
                     sessionId={session.sessionId}
+                    sessionBoardId={session.id}
                     teacherId={session.teacherId}
                     onClose={() => setIsReviewModalOpen(false)}
                     onReviewSubmitted={() => {

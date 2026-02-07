@@ -120,22 +120,40 @@ public class SkillRequestServiceImpl implements RequestService {
         User actor = userRepository.findById(actorId)
                 .orElseThrow(() -> new RuntimeException("Actor user not found: " + actorId));
 
-        boolean authorized = actorId.equals(req.getProviderId()) ||
+        // AUTHORIZATION:
+        // 1. Provider can accept/reject
+        // 2. Seeker (Student) can mark as COMPLETED (when reviewing)
+        boolean isProvider = actorId.equals(req.getProviderId()) ||
                 (actor.getStudentId() != null && actor.getStudentId().equals(req.getProviderId())) ||
                 actor.getEmail().equals(req.getProviderId());
-
-        if (!authorized) {
-            throw new RuntimeException("Only provider can update status");
-        }
-
-        // 🔥 PREVENT DUPLICATE RESPONSES
-        // Ensure request is still PENDING before processing
-        // This avoids race conditions where multiple accept/reject calls happen
-        if (req.getStatus() != SkillRequest.RequestStatus.PENDING) {
-            throw new RuntimeException("Request has already been processed as " + req.getStatus());
-        }
+        
+        boolean isSeeker = actorId.equals(req.getSeekerId());
 
         SkillRequest.RequestStatus newStatus = SkillRequest.RequestStatus.valueOf(status.toUpperCase());
+
+        if (newStatus == SkillRequest.RequestStatus.COMPLETED) {
+            if (!isSeeker && !isProvider) { // Allow both to complete? Or just seeker? Usually seeker reviews.
+                 throw new RuntimeException("Only participants can mark session as completed");
+            }
+        } else {
+             // For ACCEPT/REJECT, must be provider
+             if (!isProvider) {
+                 throw new RuntimeException("Only provider can update status to " + newStatus);
+             }
+        }
+
+        // STATE TRANSITION VALIDATION
+        if (newStatus == SkillRequest.RequestStatus.COMPLETED) {
+             // Can only complete if ACCEPTED
+             if (req.getStatus() != SkillRequest.RequestStatus.ACCEPTED) {
+                  throw new RuntimeException("Cannot complete a session that is " + req.getStatus());
+             }
+        } else {
+             // For ACCEPT/REJECT, must be PENDING
+             if (req.getStatus() != SkillRequest.RequestStatus.PENDING) {
+                 throw new RuntimeException("Request has already been processed as " + req.getStatus());
+             }
+        }
 
         req.setStatus(newStatus);
         req.setUpdatedAt(LocalDateTime.now());

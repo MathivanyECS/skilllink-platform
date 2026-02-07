@@ -39,3 +39,7 @@ export const updateProgressNotes = async (id: string, progressNotes: string): Pr
     });
     return res.data;
 };
+
+export const deleteSession = async (id: string): Promise<void> => {
+    await api.delete(`/session-boards/${id}`);
+};
