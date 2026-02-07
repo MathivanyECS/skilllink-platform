@@ -10,7 +10,18 @@ interface MeetingModalProps {
 }
 
 const MeetingModal = ({ session, onClose, onUpdate }: MeetingModalProps) => {
-    const [date, setDate] = useState(session.meetingDateTime || "");
+    // Helper to format array to datetime-local string (YYYY-MM-DDTHH:mm)
+    const formatDateForInput = (dt?: string | number[]) => {
+        if (!dt) return "";
+        if (Array.isArray(dt)) {
+            const [y, m, d, h, min] = dt;
+            const pad = (n: number) => n.toString().padStart(2, '0');
+            return `${y}-${pad(m)}-${pad(d)}T${pad(h)}:${pad(min)}`;
+        }
+        return dt;
+    };
+
+    const [date, setDate] = useState(formatDateForInput(session.meetingDateTime));
     const [location, setLocation] = useState(session.meetingLocation || "Google Meet");
     const [loading, setLoading] = useState(false);
 
