@@ -18,6 +18,10 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+/**
+ * Implementation of SessionBoardService.
+ * Manages session boards, including creation and meeting updates.
+ */
 public class SessionBoardServiceImpl implements SessionBoardService {
      
     /**

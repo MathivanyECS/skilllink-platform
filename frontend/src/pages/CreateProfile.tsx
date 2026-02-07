@@ -122,12 +122,16 @@ const CreateProfile = () => {
               className="w-full px-4 py-3 bg-black border border-gray-700 rounded-lg"
             />
 
-            <input
-              type="number"
+            <select
               {...register("yearOfStudy")}
-              placeholder="Year of Study"
-              className="w-full px-4 py-3 bg-black border border-gray-700 rounded-lg"
-            />
+              className="w-full px-4 py-3 bg-black border border-gray-700 rounded-lg text-gray-300"
+            >
+              <option value="">Select Year of Study</option>
+              <option value="1">1st Year</option>
+              <option value="2">2nd Year</option>
+              <option value="3">3rd Year</option>
+              <option value="4">4th Year</option>
+            </select>
 
             <input
               {...register("phoneNumber")}

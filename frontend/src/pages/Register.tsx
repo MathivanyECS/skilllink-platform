@@ -40,7 +40,11 @@ const Register = () => {
       navigate("/login"); // ✅ auto redirect
     } catch (error: any) {
       setSuccessMsg("");
-      setErrorMsg(error.response?.data?.message || "Registration failed");
+      if (error.response?.status === 409) {
+        setErrorMsg("Account with this Email or Student ID already exists. Please login.");
+      } else {
+        setErrorMsg(error.response?.data?.message || "Registration failed. Please try again.");
+      }
     }
   };
 
@@ -61,6 +65,18 @@ const Register = () => {
         <h2 className="text-xl font-bold text-center mb-6">
           Create <span className="text-green-400">Account</span>
         </h2>
+
+        {/* Status Messages */}
+        {errorMsg && (
+          <div className="mb-4 p-3 bg-red-500/10 border border-red-500/50 rounded text-red-400 text-sm text-center">
+            {errorMsg}
+          </div>
+        )}
+        {successMsg && (
+          <div className="mb-4 p-3 bg-green-500/10 border border-green-500/50 rounded text-green-400 text-sm text-center">
+            {successMsg}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
 
