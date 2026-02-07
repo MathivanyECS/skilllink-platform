@@ -507,7 +507,9 @@ public class ProfileServiceImpl implements ProfileService {
         addedNormalized.removeAll(oldNormalized);
 
         // Update basic fields
-        profile.setProfilePicture(request.getProfilePicture());
+        if (request.getProfilePicture() != null && !request.getProfilePicture().isBlank()) {
+            profile.setProfilePicture(request.getProfilePicture());
+        }
         profile.setDepartment(request.getDepartment());
         profile.setYearOfStudy(request.getYearOfStudy());
         profile.setBio(request.getBio());
@@ -566,7 +568,8 @@ public class ProfileServiceImpl implements ProfileService {
                     if (user == null)
                         return null;
 
-                    ProfileDTO dto = ProfileDTO.fromProfile(profile, user.getFullName(), user.getEmail());
+                    ProfileDTO dto = ProfileDTO.fromProfile(profile, user.getFullName(), user.getEmail(),
+                            user.getStudentId());
 
                     // rating stats
                     ReviewRepository.RatingStats stats = reviewRepository.getRatingStatsByReviewedId(userId);
