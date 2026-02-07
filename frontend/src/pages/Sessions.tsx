@@ -6,6 +6,7 @@ import TopNavigationBar from "../components/layout/TopNavigationBar";
 import { getSessionBoardsByLearner, getSessionBoardsByTeacher } from "../services/sessionService";
 import { SessionBoard } from "../types/session.types";
 import { getProfileById } from "../services/profileService";
+import ProfileDropdown from "../components/dashboard/ProfileDropdown";
 
 const Sessions = () => {
   const navigate = useNavigate();
@@ -13,6 +14,7 @@ const Sessions = () => {
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string>("");
   const [loading, setLoading] = useState(true);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
 
   // 1. Initialize User & Fetch Sessions
   useEffect(() => {
@@ -115,8 +117,11 @@ const Sessions = () => {
     <div className="flex flex-col h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 text-white overflow-hidden">
       <TopNavigationBar
         active="sessions"
-        onProfileClick={() => navigate("/dashboard")}
+        onProfileClick={() => setShowProfileMenu(prev => !prev)}
       />
+      {showProfileMenu && (
+        <ProfileDropdown onClose={() => setShowProfileMenu(false)} />
+      )}
       <div className="flex flex-1 overflow-hidden relative">
         {/* LEFT SIDEBAR: Session List */}
         <SessionList
