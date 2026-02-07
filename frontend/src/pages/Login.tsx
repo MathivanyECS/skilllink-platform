@@ -21,8 +21,10 @@ const Login = () => {
 
       const token = res.token;
       const user = res.user;
-      // save token
+      // save token and userId
       localStorage.setItem("token", token);
+      localStorage.setItem("userId", user.id);
+
 
       if (user.role === "ADMIN") {
         navigate("/admin-dashboard");
