@@ -7,9 +7,21 @@ interface Props {
   onClose: () => void;
 }
 
+const BACKEND_URL = "http://localhost:8081";
+const DEFAULT_AVATAR =
+  "https://cdn-icons-png.flaticon.com/512/149/149071.png";
+
 const ProfileViewModal = ({ open, userId, onClose }: Props) => {
   const [profile, setProfile] = useState<any>(null);
   const [rating, setRating] = useState(0);
+
+  // ✅ RESET STATE WHEN USER CHANGES
+  useEffect(() => {
+    if (!open) {
+      setProfile(null);
+      setRating(0);
+    }
+  }, [open]);
 
   useEffect(() => {
     if (open && userId) {
@@ -23,77 +35,73 @@ const ProfileViewModal = ({ open, userId, onClose }: Props) => {
 
   return (
     <div style={overlay}>
-      <div style={modal}>
+      <div style={modal} key={profile.id}>
+        {/* ✅ PROFILE IMAGE */}
+        <div
+          style={{
+            width: 120,
+            height: 120,
+            borderRadius: "50%",
+            margin: "0 auto 20px",
+            backgroundImage: `url(${profile.profilePicture
+                ? `${BACKEND_URL}${profile.profilePicture}`
+                : DEFAULT_AVATAR
+              })`,
+            backgroundSize: "cover",
+            backgroundPosition: "center"
+          }}
+        />
 
-        {/* HEADER */}
         <h1 style={name}>{profile.fullName}</h1>
 
-        {/* BASIC INFO */}
         <div style={infoBox}>
-          <div style={row}>
-            <span style={label}>Student ID</span>
-            <span style={value}>{profile.studentId || "-"}</span>
-          </div>
-
-          <div style={row}>
-            <span style={label}>Department</span>
-            <span style={value}>{profile.department}</span>
-          </div>
-
-          <div style={row}>
-            <span style={label}>Year of Study</span>
-            <span style={value}>Year {profile.yearOfStudy}</span>
-          </div>
-
-          <div style={row}>
-            <span style={label}>Email</span>
-            <span style={email}>{profile.email}</span>
-          </div>
+          <Info label="Student ID" value={profile.studentId || "-"} />
+          <Info label="Department" value={profile.department} />
+          <Info label="Year" value={`Year ${profile.yearOfStudy}`} />
+          <Info label="Email" value={profile.email} />
         </div>
 
-        {/* SKILLS */}
-        <div style={section}>
-          <h3 style={sectionTitle}>Skills to Learn</h3>
-          <div style={pillBox}>
-            {profile.skillsToLearn?.length
-              ? profile.skillsToLearn.map((s: string) => (
-                  <span key={s} style={pill}>{s}</span>
-                ))
-              : <span style={muted}>Not specified</span>}
-          </div>
-        </div>
+        <Section title="Skills to Learn" items={profile.skillsToLearn} />
+        <Section
+          title="Skills to Teach"
+          items={profile.skillsToTeach?.map((s: any) => s.skillName)}
+        />
 
-        <div style={section}>
-          <h3 style={sectionTitle}>Skills to Teach</h3>
-          <div style={pillBox}>
-            {profile.skillsToTeach?.length
-              ? profile.skillsToTeach.map((s: any) => (
-                  <span key={s.skillName} style={pill}>{s.skillName}</span>
-                ))
-              : <span style={muted}>Not specified</span>}
-          </div>
-        </div>
-
-        {/* RATING */}
         <div style={ratingBox}>
           <span style={ratingValue}>{rating.toFixed(1)}</span>
           <span style={ratingOutOf}> / 5.0</span>
         </div>
 
-        {/* ACTION */}
         <button style={doneBtn} onClick={onClose}>
           DONE
         </button>
-
       </div>
     </div>
   );
 };
 
-/* ================= STYLES ================= */
+/* SMALL COMPONENTS */
+const Info = ({ label, value }: any) => (
+  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
+    <span style={{ opacity: 0.7 }}>{label}</span>
+    <span style={{ fontWeight: 600 }}>{value}</span>
+  </div>
+);
 
-const GREEN = "#38AE56";
+const Section = ({ title, items }: any) => (
+  <div style={{ marginBottom: 22 }}>
+    <h3 style={{ color: "#38AE56" }}>{title}</h3>
+    <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+      {items?.length
+        ? items.map((i: string) => (
+          <span key={i} style={pill}>{i}</span>
+        ))
+        : <span style={{ opacity: 0.6 }}>Not specified</span>}
+    </div>
+  </div>
+);
 
+/* STYLES */
 const overlay = {
   position: "fixed" as const,
   inset: 0,
@@ -106,103 +114,29 @@ const overlay = {
 
 const modal = {
   width: 560,
-  background: "linear-gradient(180deg,#1f1f1f,#121212)",
+  background: "#121212",
   borderRadius: 20,
   padding: "32px 36px",
-  color: "white",
-  boxShadow: "0 0 50px rgba(0,0,0,0.95)"
+  color: "white"
 };
 
-const name = {
-  fontSize: 32,
-  fontWeight: 700,
-  color: GREEN,
-  marginBottom: 22
-};
-
-const infoBox = {
-  background: "rgba(255,255,255,0.04)",
-  borderRadius: 14,
-  padding: 20,
-  marginBottom: 26
-};
-
-const row = {
-  display: "flex",
-  justifyContent: "space-between",
-  marginBottom: 12
-};
-
-const label = {
-  fontSize: 14,
-  opacity: 0.7
-};
-
-const value = {
-  fontSize: 15,
-  fontWeight: 600
-};
-
-const email = {
-  fontSize: 15,
-  fontWeight: 500,
-  color: "#e0e0e0"
-};
-
-const section = {
-  marginBottom: 24
-};
-
-const sectionTitle = {
-  fontSize: 18,
-  fontWeight: 600,
-  color: GREEN,
-  marginBottom: 10
-};
-
-const pillBox = {
-  display: "flex",
-  flexWrap: "wrap" as const,
-  gap: 10
-};
-
+const name = { fontSize: 32, color: "#38AE56", marginBottom: 22 };
+const infoBox = { marginBottom: 26 };
 const pill = {
   background: "rgba(56,174,86,0.15)",
-  color: "#c8f5d6",
   padding: "6px 14px",
-  borderRadius: 20,
-  fontSize: 14
+  borderRadius: 20
 };
-
-const muted = {
-  opacity: 0.6,
-  fontSize: 14
-};
-
-const ratingBox = {
-  fontSize: 22,
-  fontWeight: 700,
-  marginBottom: 28
-};
-
-const ratingValue = {
-  color: GREEN
-};
-
-const ratingOutOf = {
-  opacity: 0.6
-};
-
+const ratingBox = { fontSize: 22, marginBottom: 28 };
+const ratingValue = { color: "#38AE56" };
+const ratingOutOf = { opacity: 0.6 };
 const doneBtn = {
   width: "100%",
-  padding: "14px 0",
-  background: GREEN,
+  padding: "14px",
+  background: "#38AE56",
   border: "none",
   borderRadius: 14,
-  color: "white",
-  fontSize: 16,
-  fontWeight: 700,
-  cursor: "pointer"
+  fontWeight: 700
 };
 
 export default ProfileViewModal;
