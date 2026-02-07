@@ -121,11 +121,23 @@ const CreateProfile = () => {
     setErrorMsg("");
 
     try {
-      let imageUrl = existingImage
-        ? existingImage.replace("http://localhost:8081", "")
-        : null;
+      let imageUrl: string | null = null;
 
-      // Upload image if selected
+      // 1️⃣ CREATE PROFILE FIRST (if new user)
+      if (!isEditMode) {
+        const createRes = await api.post("/profiles", {
+          department: data.department,
+          yearOfStudy: data.yearOfStudy,
+          bio: data.bio.trim(),
+          phoneNumber: data.phoneNumber.trim(),
+          skillsToTeach: data.skillsToTeach.filter(s => s.skillName.trim() !== ""),
+          skillsToLearn: data.skillsToLearn.filter(s => s.trim() !== ""),
+        });
+
+        imageUrl = createRes.data.profilePicture ?? null;
+      }
+
+      // 2️⃣ UPLOAD IMAGE (now profile exists)
       if (profileImage) {
         const formData = new FormData();
         formData.append("file", profileImage);
@@ -139,37 +151,25 @@ const CreateProfile = () => {
         imageUrl = imgRes.data.profilePicture;
       }
 
-      const payload = {
+      // 3️⃣ UPDATE PROFILE WITH IMAGE
+      await api.put("/profiles/me", {
         department: data.department,
-        yearOfStudy: Number(data.yearOfStudy),
+        yearOfStudy: data.yearOfStudy,
         bio: data.bio.trim(),
         phoneNumber: data.phoneNumber.trim(),
         profilePicture: imageUrl,
-        skillsToTeach: data.skillsToTeach
-          .filter(s => s.skillName.trim() !== "")
-          .map(s => ({
-            skillName: s.skillName.trim(),
-            proficiency: s.proficiency,
-            yearsOfExperience: Number(s.yearsOfExperience) || 0,
-          })),
-        skillsToLearn: data.skillsToLearn
-          .map(s => s.trim())
-          .filter(s => s !== ""),
-      };
-
-      if (isEditMode) {
-        await api.put("/profiles/me", payload);
-      } else {
-        await api.post("/profiles", payload);
-      }
+        skillsToTeach: data.skillsToTeach.filter(s => s.skillName.trim() !== ""),
+        skillsToLearn: data.skillsToLearn.filter(s => s.trim() !== ""),
+      });
 
       navigate("/dashboard");
-    } catch {
+    } catch (e) {
       setErrorMsg("Failed to save profile");
     } finally {
       setLoading(false);
     }
   };
+
 
   /* ================= UI ================= */
 
