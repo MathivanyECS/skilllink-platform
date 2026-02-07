@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.*;
 
@@ -99,6 +100,32 @@ public class ProfileController {
         return ResponseEntity.status(HttpStatus.CREATED).body(profile);
     }
 
+    @GetMapping("/me")
+    public ResponseEntity<ProfileDTO> getMyProfile(Authentication authentication) {
+
+        String email = authentication.getName(); // from JWT
+        String userId = userService.getUserByEmail(email).getId();
+
+        return profileService
+                .getProfileOptionalByUserId(userId)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PutMapping("/me/profile-picture")
+    public ResponseEntity<Map<String, String>> uploadProfilePicture(
+            @RequestParam("file") MultipartFile file) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        String email = authentication.getName();
+        String userId = userService.getUserByEmail(email).getId();
+
+        String imageUrl = profileService.updateProfilePicture(userId, file);
+
+        return ResponseEntity.ok(
+                Map.of("profilePicture", imageUrl));
+    }
+
     @GetMapping("/{userId}")
     public ResponseEntity<ProfileDTO> getProfile(@PathVariable String userId) {
         return ResponseEntity.ok(
@@ -158,6 +185,18 @@ public class ProfileController {
     public ResponseEntity<ProfileDTO> updateProfile(
             @PathVariable String userId,
             @Valid @RequestBody CreateProfileRequest request) {
+        return ResponseEntity.ok(
+                profileService.updateProfile(userId, request));
+    }
+
+    @PutMapping("/me")
+    public ResponseEntity<ProfileDTO> updateMyProfile(
+            Authentication authentication,
+            @Valid @RequestBody CreateProfileRequest request) {
+
+        String email = authentication.getName();
+        String userId = userService.getUserByEmail(email).getId();
+
         return ResponseEntity.ok(
                 profileService.updateProfile(userId, request));
     }
