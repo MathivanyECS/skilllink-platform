@@ -98,9 +98,21 @@ public class SkillRequestController {
 
     @GetMapping("/sent")
     public ResponseEntity<List<SkillRequest>> sent(Authentication auth) {
-        if (auth == null || !auth.isAuthenticated())
+
+        if (auth == null || !auth.isAuthenticated()) {
             return ResponseEntity.status(401).build();
+        }
+
         String email = auth.getName();
+        var user = userService.getUserByEmail(email);
+
+        if (user == null) {
+            return ResponseEntity.status(401).build();
+        }
+
+        List<SkillRequest> requests = requestService.getSentRequests(user.getId());
+
+        return ResponseEntity.ok(requests);
     }
 
     @GetMapping("/{requestId}")
