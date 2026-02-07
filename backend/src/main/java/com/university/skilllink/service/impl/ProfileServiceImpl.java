@@ -23,7 +23,6 @@ import com.university.skilllink.service.WishlistService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -130,7 +129,7 @@ public class ProfileServiceImpl implements ProfileService {
         }
 
         // Convert to DTO and return
-        return ProfileDTO.fromProfile(savedProfile, user.getFullName(), user.getEmail());
+        return ProfileDTO.fromProfile(savedProfile, user.getFullName(), user.getEmail(), user.getStudentId());
     }
 
     @Override
@@ -179,8 +178,9 @@ public class ProfileServiceImpl implements ProfileService {
         log.info("Profile fetched successfully for user ID: {}", userId);
 
         // Create DTO with reviews
-        ProfileDTO profileDTO = ProfileDTO.fromProfile(profile, user.getFullName(), user.getEmail());
-        profileDTO.setStudentId(user.getStudentId());
+        ProfileDTO profileDTO = ProfileDTO.fromProfile(profile, user.getFullName(), user.getEmail(),
+                user.getStudentId());
+        // profileDTO.setStudentId(user.getStudentId()); // ✅ Now handled in fromProfile
         profileDTO.setReviews(reviews); // Add reviews to DTO
         profileDTO.setAverageRating(averageRating);
         profileDTO.setReviewCount(reviewCount);
@@ -215,7 +215,8 @@ public class ProfileServiceImpl implements ProfileService {
                 .map(profile -> {
                     User user = userRepository.findById(profile.getUserId()).orElse(null);
                     if (user != null && user.getIsActive()) {
-                        ProfileDTO dto = ProfileDTO.fromProfile(profile, user.getFullName(), user.getEmail());
+                        ProfileDTO dto = ProfileDTO.fromProfile(profile, user.getFullName(), user.getEmail(),
+                                user.getStudentId());
 
                         // Get reviews and rating stats for this user
                         List<ReviewDTO> reviews = reviewRepository.findByReviewedIdAndIsPublicTrue(user.getId())
@@ -268,7 +269,8 @@ public class ProfileServiceImpl implements ProfileService {
                     // Fetch user linked to profile
                     User user = userRepository.findById(profile.getUserId()).orElse(null);
                     if (user != null && Boolean.TRUE.equals(user.getIsActive())) {
-                        ProfileDTO dto = ProfileDTO.fromProfile(profile, user.getFullName(), user.getEmail());
+                        ProfileDTO dto = ProfileDTO.fromProfile(profile, user.getFullName(), user.getEmail(),
+                                user.getStudentId());
 
                         // Get reviews and rating stats for this user
                         List<ReviewDTO> reviews = reviewRepository.findByReviewedIdAndIsPublicTrue(user.getId())
@@ -332,7 +334,8 @@ public class ProfileServiceImpl implements ProfileService {
                 .map(profile -> {
                     User user = userRepository.findById(profile.getUserId()).orElse(null);
                     if (user != null && user.getIsActive()) {
-                        ProfileDTO dto = ProfileDTO.fromProfile(profile, user.getFullName(), user.getEmail());
+                        ProfileDTO dto = ProfileDTO.fromProfile(profile, user.getFullName(), user.getEmail(),
+                                user.getStudentId());
 
                         // Get reviews and rating stats for this user
                         List<ReviewDTO> reviews = reviewRepository.findByReviewedIdAndIsPublicTrue(user.getId())
@@ -372,7 +375,8 @@ public class ProfileServiceImpl implements ProfileService {
                 .map(profile -> {
                     User user = userRepository.findById(profile.getUserId()).orElse(null);
                     if (user != null && user.getIsActive()) {
-                        ProfileDTO dto = ProfileDTO.fromProfile(profile, user.getFullName(), user.getEmail());
+                        ProfileDTO dto = ProfileDTO.fromProfile(profile, user.getFullName(), user.getEmail(),
+                                user.getStudentId());
 
                         // Get reviews and rating stats for this user
                         List<ReviewDTO> reviews = reviewRepository.findByReviewedIdAndIsPublicTrue(user.getId())
@@ -506,7 +510,7 @@ public class ProfileServiceImpl implements ProfileService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
 
-        return ProfileDTO.fromProfile(updatedProfile, user.getFullName(), user.getEmail());
+        return ProfileDTO.fromProfile(updatedProfile, user.getFullName(), user.getEmail(), user.getStudentId());
     }
 
     @Override
@@ -552,7 +556,8 @@ public class ProfileServiceImpl implements ProfileService {
                 .map(profile -> {
                     User user = userRepository.findById(profile.getUserId()).orElse(null);
                     if (user != null && user.getIsActive()) {
-                        ProfileDTO dto = ProfileDTO.fromProfile(profile, user.getFullName(), user.getEmail());
+                        ProfileDTO dto = ProfileDTO.fromProfile(profile, user.getFullName(), user.getEmail(),
+                                user.getStudentId());
 
                         // Get reviews and rating stats for this user
                         List<ReviewDTO> reviews = reviewRepository.findByReviewedIdAndIsPublicTrue(user.getId())
@@ -598,7 +603,8 @@ public class ProfileServiceImpl implements ProfileService {
                 .map(profile -> {
                     User user = userRepository.findById(profile.getUserId()).orElse(null);
                     if (user != null && user.getIsActive()) {
-                        ProfileDTO dto = ProfileDTO.fromProfile(profile, user.getFullName(), user.getEmail());
+                        ProfileDTO dto = ProfileDTO.fromProfile(profile, user.getFullName(), user.getEmail(),
+                                user.getStudentId());
 
                         // Get reviews and rating stats for this user
                         List<ReviewDTO> reviews = reviewRepository.findByReviewedIdAndIsPublicTrue(user.getId())

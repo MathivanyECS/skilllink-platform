@@ -71,6 +71,13 @@ const NotificationItem = ({
           {typeText[data.type] || data.title}
         </span>
 
+        <span style={{ fontSize: 11, color: "#aaa", fontWeight: 400, marginLeft: 10 }}>
+          {new Date(data.createdAt).toLocaleString("en-GB", {
+            day: "numeric", month: "short", year: "numeric",
+            hour: "2-digit", minute: "2-digit"
+          })}
+        </span>
+
         {!data.read && (
           <span
             style={{

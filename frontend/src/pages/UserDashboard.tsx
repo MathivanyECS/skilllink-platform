@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import api from "../services/api";
 import { FaPlus, FaSearch } from "react-icons/fa";
+import { jwtDecode } from "jwt-decode";
 
 import ProfileDropdown from "../components/dashboard/ProfileDropdown";
 import NotificationDrawer from "../components/dashboard/NotificationDrawer";
@@ -16,6 +17,15 @@ interface Profile {
   department: string;
   yearOfStudy: number;
   profileImageUrl?: string;
+  studentId?: string; // ✅ Added studentId
+  skillsToTeach?: Skill[]; // ✅ Updated to array of objects
+}
+
+// ✅ Define Skill interface
+interface Skill {
+  skillName: string;
+  proficiency?: string;
+  yearsOfExperience?: number;
 }
 
 const UserDashboard = () => {
@@ -31,12 +41,24 @@ const UserDashboard = () => {
 
   const [openProfile, setOpenProfile] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [selectedProvider, setSelectedProvider] = useState<Profile | null>(null); // ✅ Track selected provider
 
   const [unreadCount, setUnreadCount] = useState(0);
   const [showWishlist, setShowWishlist] = useState(false);
   const [showWishlistSuccess, setShowWishlistSuccess] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   useEffect(() => {
+    // ✅ Decode token to get current user ID
+    const token = localStorage.getItem("token");
+    if (token) {
+      try {
+        const decoded: any = jwtDecode(token);
+        setCurrentUserId(decoded.userId || decoded.sub); // Adjust based on token structure
+      } catch (e) {
+        console.error("Failed to decode token", e);
+      }
+    }
     fetchProfiles();
   }, [department, year, skill]);
 
@@ -159,37 +181,45 @@ const UserDashboard = () => {
 
       {/* CARDS */}
       <div style={gridStyle}>
-        {profiles.map(p => (
-          <div key={p.userId} style={cardStyle}>
-            <div style={avatarStyle(p.profileImageUrl)} />
-            <h3 style={nameStyle}>{p.fullName}</h3>
-            <p>{p.department}</p>
-            <p>{formatYear(p.yearOfStudy)}</p>
-            <p>Rating: {(ratings[p.userId] ?? 0).toFixed(1)} / 5.0</p>
+        {profiles
+          .filter(p => p.userId !== currentUserId) // ✅ Filter logged-in user
+          .map(p => (
+            <div key={p.userId} style={cardStyle}>
+              <div style={avatarStyle(p.profileImageUrl)} />
+              <h3 style={nameStyle}>{p.fullName}</h3>
+              <p>{p.department}</p>
+              <p>{formatYear(p.yearOfStudy)}</p>
+              <p>Rating: {(ratings[p.userId] ?? 0).toFixed(1)} / 5.0</p>
 
-            <div style={{ marginTop: 16 }}>
-              <button style={greenBtn} onClick={() => setShowRequestModal(true)}>
-                Request Skill
-              </button>
+              <div style={{ marginTop: 16 }}>
+                <button style={greenBtn} onClick={() => {
+                  setSelectedProvider(p); // ✅ Set selected provider
+                  setShowRequestModal(true);
+                }}>
+                  Request Skill
+                </button>
 
-              <button
-                style={grayBtn}
-                onClick={() => {
-                  setSelectedUserId(p.userId);
-                  setOpenProfile(true);
-                }}
-              >
-                View Profile
-              </button>
+                <button
+                  style={grayBtn}
+                  onClick={() => {
+                    setSelectedUserId(p.userId);
+                    setOpenProfile(true);
+                  }}
+                >
+                  View Profile
+                </button>
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
       </div>
 
       <RequestSkillModal
         open={showRequestModal}
         onClose={() => setShowRequestModal(false)}
         onSuccess={() => alert("Request sent successfully")}
+        providerId={selectedProvider?.userId || ""} // ✅ Pass providerId (UUID) for API
+        providerStudentId={selectedProvider?.studentId || "N/A"} // ✅ Pass Student ID for Display
+        availableSkills={selectedProvider?.skillsToTeach?.map(s => s.skillName) || []} // ✅ Extract skill names
       />
 
       <ProfileViewModal
