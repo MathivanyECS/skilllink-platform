@@ -3,7 +3,16 @@ package com.university.skilllink.service.impl;
 import java.util.Map;
 import java.util.Objects;
 import java.util.regex.Pattern;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.Collections;
+import java.util.Optional;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.io.IOException;
+import java.util.UUID;
 
 import org.springframework.security.core.context.SecurityContextHolder;
 
@@ -26,6 +35,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.HashSet;
 import java.util.List;
@@ -131,6 +141,39 @@ public class ProfileServiceImpl implements ProfileService {
 
         // Convert to DTO and return
         return ProfileDTO.fromProfile(savedProfile, user.getFullName(), user.getEmail());
+    }
+
+    @Override
+    @Transactional
+    public String updateProfilePicture(String userId, MultipartFile file) {
+
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("File is empty");
+        }
+
+        Profile profile = profileRepository.findByUserId(userId)
+                .orElseThrow(() -> new ProfileNotFoundException("Profile not found"));
+
+        try {
+            // create uploads folder if not exists
+            String uploadDir = "uploads/profile-images/";
+            Files.createDirectories(Paths.get(uploadDir));
+
+            String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
+            Path filePath = Paths.get(uploadDir + fileName);
+
+            Files.write(filePath, file.getBytes());
+
+            String imageUrl = "/uploads/profile-images/" + fileName;
+
+            profile.setProfilePicture(imageUrl);
+            profileRepository.save(profile);
+
+            return imageUrl;
+
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to upload profile picture", e);
+        }
     }
 
     @Override
@@ -507,6 +550,30 @@ public class ProfileServiceImpl implements ProfileService {
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
 
         return ProfileDTO.fromProfile(updatedProfile, user.getFullName(), user.getEmail());
+    }
+
+    @Override
+    public Optional<ProfileDTO> getProfileOptionalByUserId(String userId) {
+        log.info("Fetching profile (optional) for user ID: {}", userId);
+
+        return profileRepository.findByUserId(userId)
+                .map(profile -> {
+                    User user = userRepository.findById(userId).orElse(null);
+                    if (user == null)
+                        return null;
+
+                    ProfileDTO dto = ProfileDTO.fromProfile(profile, user.getFullName(), user.getEmail());
+
+                    // rating stats
+                    ReviewRepository.RatingStats stats = reviewRepository.getRatingStatsByReviewedId(userId);
+
+                    if (stats != null) {
+                        dto.setAverageRating(stats.getAverage() != null ? stats.getAverage() : 0.0);
+                        dto.setReviewCount(stats.getCount() != null ? stats.getCount() : 0L);
+                    }
+
+                    return dto;
+                });
     }
 
     @Override
