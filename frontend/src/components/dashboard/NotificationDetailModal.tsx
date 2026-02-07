@@ -21,7 +21,6 @@ const NotificationDetailModal = ({
 
   useEffect(() => {
     if (notification?.metadata?.requestId) {
-      // 🔥 FETCH LATEST STATUS TO PREVENT DUPLICATE RESPONSE
       api.get(`/requests/${notification.metadata.requestId}`)
         .then(res => {
           if (res.data && res.data.status) {
@@ -29,7 +28,6 @@ const NotificationDetailModal = ({
           }
         })
         .catch(() => {
-          // fallback to metadata status if fetch fails
           if (notification?.metadata?.status) {
             setStatus(notification.metadata.status);
           }
@@ -48,11 +46,8 @@ const NotificationDetailModal = ({
       setLoading(true);
       await api.put(`/requests/${meta.requestId}/status?status=ACCEPTED`);
       setStatus("ACCEPTED");
-      // 🔥 Trigger update immediately to remove notification from list if needed
       onUpdated();
-    } catch (err) {
-      console.error("Accept failed", err);
-      // 🔥 Refetch status in case it was already processed
+    } catch {
       fetchStatus();
     } finally {
       setLoading(false);
@@ -65,8 +60,7 @@ const NotificationDetailModal = ({
       await api.put(`/requests/${meta.requestId}/status?status=REJECTED`);
       setStatus("REJECTED");
       onUpdated();
-    } catch (err) {
-      console.error("Reject failed", err);
+    } catch {
       fetchStatus();
     } finally {
       setLoading(false);
@@ -80,8 +74,7 @@ const NotificationDetailModal = ({
           if (res.data && res.data.status) {
             setStatus(res.data.status);
           }
-        })
-        .catch(e => console.error("Fetch status failed", e));
+        });
     }
   };
 
@@ -98,27 +91,44 @@ const NotificationDetailModal = ({
         {/* ================= NEW REQUEST (PROVIDER) ================= */}
         {notification.type === "NEW_REQUEST" && (
           <>
-            <h2>Incoming Skill Request</h2>
-            <p style={{ fontSize: 12, color: "#888", marginBottom: 15 }}>
-              {(() => {
-                try {
-                  return new Date(notification.createdAt).toLocaleString("en-GB", {
-                    day: "numeric", month: "short", year: "numeric",
-                    hour: "2-digit", minute: "2-digit"
-                  });
-                } catch (e) {
-                  return "Invalid Date";
-                }
-              })()}
-            </p>
-            <p><strong>Student ID:</strong> {meta.studentId || "-"}</p>
-            <p><strong>Student Name:</strong> {meta.studentName || "-"}</p>
-            <p><strong>Skill:</strong> {meta.skillName || "-"}</p>
-            {meta.note && <p><strong>Message:</strong> {meta.note}</p>}
+            <h2 style={title}>Incoming Skill Request</h2>
 
-            {/* 🔥 Check LOCAL status state, not just meta logic */}
+            <p style={dateText}>
+              {new Date(notification.createdAt).toLocaleString("en-GB", {
+                day: "numeric",
+                month: "short",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit"
+              })}
+            </p>
+
+            <div style={infoBox}>
+              <div>
+                <span style={label}>Student ID</span>
+                <span style={value}>{meta.studentId || "-"}</span>
+              </div>
+
+              <div>
+                <span style={label}>Student Name</span>
+                <span style={value}>{meta.studentName || "-"}</span>
+              </div>
+
+              <div>
+                <span style={label}>Skill</span>
+                <span style={skillValue}>{meta.skillName || "-"}</span>
+              </div>
+
+              {meta.note && (
+                <div style={messageBox}>
+                  <span style={label}>Message</span>
+                  <p style={messageText}>{meta.note}</p>
+                </div>
+              )}
+            </div>
+
             {status === "PENDING" && (
-              <div style={btnRow}>
+              <div style={buttonRow}>
                 <button style={acceptBtn} onClick={handleAccept} disabled={loading}>
                   {loading ? "Processing..." : "Accept"}
                 </button>
@@ -132,21 +142,11 @@ const NotificationDetailModal = ({
             )}
 
             {status !== "PENDING" && (
-              <>
-                <p style={{
-                  marginTop: 20,
-                  fontWeight: 600,
-                  color: status === "ACCEPTED" ? "#38AE56" : "#e74c3c"
-                }}>
-                  Request has been {status.toLowerCase()}.
-                </p>
-
-                <div style={btnRow}>
-                  <button style={cancelBtn} onClick={closeAndRead}>
-                    OK
-                  </button>
-                </div>
-              </>
+              <div style={centerBtnRow}>
+                <button style={cancelBtn} onClick={closeAndRead}>
+                  OK
+                </button>
+              </div>
             )}
           </>
         )}
@@ -158,7 +158,7 @@ const NotificationDetailModal = ({
             <p style={{ marginTop: 10 }}>
               Your request for <strong>{meta.skillName || "-"}</strong> was sent.
             </p>
-            <div style={btnRow}>
+            <div style={centerBtnRow}>
               <button style={acceptBtn} onClick={closeAndRead}>
                 OK
               </button>
@@ -169,34 +169,34 @@ const NotificationDetailModal = ({
         {/* ================= ACCEPT / REJECT (SEEKER) ================= */}
         {(notification.type === "REQUEST_ACCEPTED" ||
           notification.type === "REQUEST_REJECTED") && (
-            <>
-              <h2>Request Status Update</h2>
-              <p><strong>Skill:</strong> {meta.skillName || "-"}</p>
-              <p>
-                <strong>Status:</strong>{" "}
-                <span style={{ color: meta.status === "ACCEPTED" ? "#38AE56" : "#e74c3c" }}>
-                  {meta.status}
-                </span>
-              </p>
-              <div style={btnRow}>
-                <button style={cancelBtn} onClick={closeAndRead}>
-                  OK
-                </button>
-              </div>
-            </>
-          )}
+          <>
+            <h2 style={statusTitle}>Request Status Update</h2>
 
-        {/* ================= WISHLIST (UI ENHANCED ONLY) ================= */}
+            <p style={statusSkill}>{meta.skillName || "-"}</p>
+
+            <p
+              style={{
+                ...statusValue,
+                color: meta.status === "ACCEPTED" ? "#38AE56" : "#e74c3c"
+              }}
+            >
+              {meta.status}
+            </p>
+
+            <div style={centerBtnRow}>
+              <button style={cancelBtn} onClick={closeAndRead}>
+                OK
+              </button>
+            </div>
+          </>
+        )}
+
+        {/* ================= WISHLIST ================= */}
         {notification.type === "WISHLIST_CREATED" && (
           <>
             <h1 style={wishlistTitle}>Wishlist Added</h1>
-
             <p style={wishlistSub}>Skill</p>
-
-            <p style={wishlistSkill}>
-              {meta.skillName || "-"}
-            </p>
-
+            <p style={wishlistSkill}>{meta.skillName || "-"}</p>
             <div style={wishlistBtnRow}>
               <button style={wishlistOkBtn} onClick={closeAndRead}>
                 OK
@@ -224,27 +224,83 @@ const overlay = {
 
 const modal = {
   background: "#0f0f0f",
-  padding: 32,
-  borderRadius: 18,
-  width: 460,
+  padding: 34,
+  borderRadius: 22,
+  width: 500,
   color: "white",
   border: "2px solid #38AE56",
   boxShadow: "0 25px 70px rgba(0,0,0,0.9)",
   animation: "popup 0.3s ease-out"
 };
 
-const btnRow = {
+const title = {
+  fontSize: 26,
+  fontWeight: 700
+};
+
+const dateText = {
+  fontSize: 13,
+  color: "#888",
+  marginBottom: 22
+};
+
+const infoBox = {
   display: "flex",
-  justifyContent: "flex-end",
+  flexDirection: "column" as const,
+  gap: 14,
+  marginBottom: 28
+};
+
+const label = {
+  display: "block",
+  fontSize: 12,
+  color: "#999",
+  marginBottom: 2
+};
+
+const value = {
+  fontSize: 16,
+  fontWeight: 500
+};
+
+const skillValue = {
+  fontSize: 20,
+  fontWeight: 700,
+  color: "#38AE56"
+};
+
+const messageBox = {
+  background: "rgba(255,255,255,0.05)",
+  padding: 12,
+  borderRadius: 10
+};
+
+const messageText = {
+  marginTop: 4,
+  fontSize: 15,
+  opacity: 0.9
+};
+
+const buttonRow = {
+  display: "flex",
+  justifyContent: "center",
+  gap: 18,
   marginTop: 24
+};
+
+const centerBtnRow = {
+  display: "flex",
+  justifyContent: "center",
+  marginTop: 28
 };
 
 const acceptBtn = {
   background: "#38AE56",
   color: "white",
   border: "none",
-  padding: "12px 26px",
-  borderRadius: 10,
+  padding: "14px 34px",
+  borderRadius: 12,
+  fontSize: 16,
   cursor: "pointer"
 };
 
@@ -252,8 +308,9 @@ const rejectBtn = {
   background: "#a14444",
   color: "white",
   border: "none",
-  padding: "12px 22px",
-  borderRadius: 10,
+  padding: "14px 34px",
+  borderRadius: 12,
+  fontSize: 16,
   cursor: "pointer"
 };
 
@@ -261,12 +318,35 @@ const cancelBtn = {
   background: "#6a6464",
   color: "white",
   border: "none",
-  padding: "12px 22px",
-  borderRadius: 10,
+  padding: "14px 34px",
+  borderRadius: 12,
+  fontSize: 16,
   cursor: "pointer"
 };
 
-/* ===== Wishlist UI styles ===== */
+/* ===== Status UI ===== */
+
+const statusTitle = {
+  textAlign: "center" as const,
+  fontSize: 26,
+  fontWeight: 700,
+  marginBottom: 12
+};
+
+const statusSkill = {
+  textAlign: "center" as const,
+  fontSize: 22,
+  fontWeight: 600,
+  marginBottom: 8
+};
+
+const statusValue = {
+  textAlign: "center" as const,
+  fontSize: 24,
+  fontWeight: 800
+};
+
+/* ===== Wishlist UI ===== */
 
 const wishlistTitle = {
   textAlign: "center" as const,
