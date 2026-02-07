@@ -1,7 +1,7 @@
 import { useForm, useFieldArray } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import api from "../services/api";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 type SkillToTeach = {
   skillName: string;
@@ -18,16 +18,27 @@ type ProfileFormData = {
   skillsToLearn: string[];
 };
 
+const DEFAULT_AVATAR =
+  "https://cdn-icons-png.flaticon.com/512/149/149071.png";
+
 const CreateProfile = () => {
   const navigate = useNavigate();
+
   const [errorMsg, setErrorMsg] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+
+  // 🔹 image states
+  const [profileImage, setProfileImage] = useState<File | null>(null);
+  const [existingImage, setExistingImage] = useState<string | null>(null);
+
   const {
     register,
     handleSubmit,
     control,
     watch,
     setValue,
+    reset,
   } = useForm<ProfileFormData>({
     defaultValues: {
       skillsToTeach: [
@@ -42,16 +53,64 @@ const CreateProfile = () => {
     name: "skillsToTeach",
   });
 
-  const onSubmit = async (data: ProfileFormData) => {
+  // 🔹 load profile for edit mode
+  useEffect(() => {
+    api
+      .get("/profiles/me")
+      .then(res => {
+        reset({
+          department: res.data.department || "",
+          yearOfStudy: res.data.yearOfStudy || 1,
+          bio: res.data.bio || "",
+          phoneNumber: res.data.phoneNumber || "",
+          skillsToTeach: res.data.skillsToTeach?.length
+            ? res.data.skillsToTeach
+            : [{ skillName: "", proficiency: "BEGINNER", yearsOfExperience: 0 }],
+          skillsToLearn: res.data.skillsToLearn?.length
+            ? res.data.skillsToLearn
+            : [""],
+        });
 
+        setExistingImage(
+          res.data.profilePicture
+            ? `http://localhost:8081${res.data.profilePicture}`
+            : null
+        );
+
+        setIsEditMode(true);
+      })
+      .catch(() => {
+        setIsEditMode(false);
+      });
+  }, [reset]);
+
+  const onSubmit = async (data: ProfileFormData) => {
     setLoading(true);
     setErrorMsg("");
+
     try {
+      let imageUrl = existingImage;
+
+      // 🔹 upload image if user selected one
+      if (profileImage) {
+        const formData = new FormData();
+        formData.append("file", profileImage);
+
+        const imgRes = await api.put(
+          "/profiles/me/profile-picture",
+          formData,
+          { headers: { "Content-Type": "multipart/form-data" } }
+        );
+
+        imageUrl = imgRes.data.profileImageUrl;
+      }
+
       const payload = {
         department: data.department.trim(),
         yearOfStudy: Number(data.yearOfStudy),
         bio: data.bio.trim(),
         phoneNumber: data.phoneNumber.trim(),
+        profilePicture: imageUrl,
         skillsToTeach: data.skillsToTeach
           .filter(s => s.skillName.trim() !== "")
           .map(s => ({
@@ -63,24 +122,16 @@ const CreateProfile = () => {
           .map(s => s.trim())
           .filter(s => s !== ""),
       };
-      console.log("Sending payload:", payload);
-      await api.post("/profiles", payload);
+
+      if (isEditMode) {
+        await api.put("/profiles/me", payload);
+      } else {
+        await api.post("/profiles", payload);
+      }
 
       navigate("/dashboard");
     } catch (err: any) {
-      console.error("Profile creation error:", err.response?.data || err);
-
-      // Handle different error types
-      if (err.response?.data?.validationErrors) {
-        const validationErrors = err.response.data.validationErrors;
-        const errorMessages = Object.values(validationErrors).join(", ");
-        setErrorMsg(errorMessages);
-      } else {
-        setErrorMsg(
-          err.response?.data?.message ||
-          "Failed to create profile. Please check your inputs and try again."
-        );
-      }
+      setErrorMsg("Failed to save profile");
     } finally {
       setLoading(false);
     }
@@ -90,30 +141,52 @@ const CreateProfile = () => {
     <div className="min-h-screen bg-gradient-to-br from-black via-green-950 to-black text-white flex items-center justify-center">
       <div className="w-full max-w-6xl px-6 py-16">
 
-        {/* Title */}
         <h1 className="text-3xl font-bold text-center mb-2">
           Complete Your <span className="text-green-400">Profile</span>
         </h1>
+
         <p className="text-center text-gray-400 mb-12">
           Tell us about yourself so we can personalize your experience.
         </p>
 
-        {/* FORM */}
-        <form
-          onSubmit={handleSubmit(onSubmit)}
-          className="grid md:grid-cols-2 gap-10"
-        >
+        {/* hidden image input */}
+        <input
+          type="file"
+          accept="image/*"
+          hidden
+          id="profileImageInput"
+          onChange={e => {
+            if (e.target.files?.[0]) {
+              setProfileImage(e.target.files[0]);
+            }
+          }}
+        />
 
-          {/* LEFT CARD */}
+        <form onSubmit={handleSubmit(onSubmit)} className="grid md:grid-cols-2 gap-10">
+
+          {/* LEFT */}
           <div className="bg-black/40 p-6 rounded-2xl border border-green-500/20 space-y-6">
             <h2 className="text-xl font-semibold">Basic Information</h2>
 
-            {/* Image */}
+            {/* PROFILE IMAGE */}
             <div className="flex flex-col items-center gap-3">
-              <div className="w-28 h-28 rounded-full border-2 border-green-400 flex items-center justify-center">
-                <span className="text-gray-500">Profile</span>
-              </div>
-              <span className="text-green-400 text-sm">Change Photo</span>
+              <div
+                onClick={() =>
+                  document.getElementById("profileImageInput")?.click()
+                }
+                className="w-28 h-28 rounded-full border-2 border-green-400 cursor-pointer"
+                style={{
+                  backgroundImage: `url(${profileImage
+                    ? URL.createObjectURL(profileImage)
+                    : existingImage || DEFAULT_AVATAR
+                    })`,
+                  backgroundSize: "cover",
+                  backgroundPosition: "center",
+                }}
+              />
+              <span className="text-green-400 text-sm">
+                Change Photo
+              </span>
             </div>
 
             <input
@@ -143,9 +216,8 @@ const CreateProfile = () => {
             />
           </div>
 
-          {/* RIGHT CARD */}
+          {/* RIGHT */}
           <div className="bg-black/40 p-6 rounded-2xl border border-green-500/20 space-y-6">
-
             <h2 className="text-xl font-semibold">Skills I Can Teach</h2>
 
             {fields.map((_, index) => (
@@ -210,16 +282,21 @@ const CreateProfile = () => {
             </button>
           </div>
 
-          {/* SUBMIT */}
           <div className="md:col-span-2 text-center mt-6">
             <button
               type="submit"
+              disabled={loading}
               className="px-12 py-3 bg-green-500 text-black rounded-lg font-semibold hover:bg-green-400 transition"
             >
-              Complete Profile
+              {loading ? "Saving..." : "Complete Profile"}
             </button>
           </div>
 
+          {errorMsg && (
+            <p className="md:col-span-2 text-center text-red-400">
+              {errorMsg}
+            </p>
+          )}
         </form>
       </div>
     </div>
