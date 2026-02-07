@@ -66,7 +66,15 @@ const ReviewModal = ({ sessionId, teacherId, onClose, onReviewSubmitted }: Revie
             onClose(); // Close modal
         } catch (err: any) {
             console.error("Failed to submit review", err);
-            setError(err.response?.data?.message || "Failed to submit review. Please try again.");
+            const errorMessage = err.response?.data?.message || "Failed to submit review. Please try again.";
+
+            // If the user has already reviewed, treat it as a success (idempotent behavior from UI perspective)
+            if (errorMessage.toLowerCase().includes("already reviewed")) {
+                onReviewSubmitted();
+                onClose();
+            } else {
+                setError(errorMessage);
+            }
         } finally {
             setLoading(false);
         }
