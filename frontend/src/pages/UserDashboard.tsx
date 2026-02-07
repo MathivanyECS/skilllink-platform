@@ -16,7 +16,7 @@ interface Profile {
   fullName: string;
   department: string;
   yearOfStudy: number;
-  profileImageUrl?: string;
+  profilePicture?: string;
   studentId?: string; // ✅ Added studentId
   skillsToTeach?: Skill[]; // ✅ Updated to array of objects
 }
@@ -27,6 +27,7 @@ interface Skill {
   proficiency?: string;
   yearsOfExperience?: number;
 }
+const BACKEND_URL = "http://localhost:8081";
 
 const UserDashboard = () => {
   const [profiles, setProfiles] = useState<Profile[]>([]);
@@ -91,15 +92,23 @@ const UserDashboard = () => {
   const defaultAvatar =
     "https://cdn-icons-png.flaticon.com/512/149/149071.png";
 
-  const avatarStyle = (imageUrl?: string) => ({
-    width: 56,
-    height: 56,
-    borderRadius: "50%",
-    backgroundImage: `url(${imageUrl || defaultAvatar})`,
-    backgroundSize: "cover",
-    backgroundPosition: "center",
-    marginBottom: 14
-  });
+  const avatarStyle = (profilePicture?: string) => {
+    const imageUrl =
+      profilePicture && profilePicture.startsWith("/")
+        ? `${BACKEND_URL}${profilePicture}`
+        : profilePicture || defaultAvatar;
+
+    return {
+      width: 56,
+      height: 56,
+      borderRadius: "50%",
+      backgroundImage: `url("${imageUrl}")`,
+      backgroundSize: "cover",
+      backgroundPosition: "center",
+      marginBottom: 14
+    };
+  };
+
 
   return (
     <div style={pageStyle}>
@@ -185,7 +194,7 @@ const UserDashboard = () => {
           .filter(p => p.userId !== currentUserId) // ✅ Filter logged-in user
           .map(p => (
             <div key={p.userId} style={cardStyle}>
-              <div style={avatarStyle(p.profileImageUrl)} />
+              <div style={avatarStyle(p.profilePicture)} />
               <h3 style={nameStyle}>{p.fullName}</h3>
               <p>{p.department}</p>
               <p>{formatYear(p.yearOfStudy)}</p>
