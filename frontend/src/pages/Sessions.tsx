@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import SessionList from "../components/session/SessionList";
 import ChatBoard from "../components/session/ChatBoard";
+import TopNavigationBar from "../components/layout/TopNavigationBar";
 import { getSessionBoardsByLearner, getSessionBoardsByTeacher } from "../services/sessionService";
 import { SessionBoard } from "../types/session.types";
 import { getProfileById } from "../services/profileService";
@@ -111,32 +112,38 @@ const Sessions = () => {
   }
 
   return (
-    <div className="flex h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 text-white overflow-hidden">
-      {/* LEFT SIDEBAR: Session List */}
-      <SessionList
-        sessions={sessions}
-        selectedSessionId={selectedSessionId}
-        currentUserId={currentUserId}
-        onSelectSession={setSelectedSessionId}
+    <div className="flex flex-col h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 text-white overflow-hidden">
+      <TopNavigationBar
+        active="sessions"
+        onProfileClick={() => navigate("/dashboard")}
       />
-
-      {/* RIGHT MAIN: Chat Board */}
-      {selectedSession ? (
-        <ChatBoard
-          session={selectedSession}
+      <div className="flex flex-1 overflow-hidden relative">
+        {/* LEFT SIDEBAR: Session List */}
+        <SessionList
+          sessions={sessions}
+          selectedSessionId={selectedSessionId}
           currentUserId={currentUserId}
-          onSessionUpdate={handleSessionUpdate}
+          onSelectSession={setSelectedSessionId}
         />
-      ) : (
-        <div className="flex-1 flex flex-col items-center justify-center bg-black/50 text-gray-500">
-          <img
-            src="/src/assets/images/skilllink-logo.png"
-            className="h-24 opacity-20 mb-4 grayscale"
-            alt="Logo"
+
+        {/* RIGHT MAIN: Chat Board */}
+        {selectedSession ? (
+          <ChatBoard
+            session={selectedSession}
+            currentUserId={currentUserId}
+            onSessionUpdate={handleSessionUpdate}
           />
-          <p>Select a session to start messaging</p>
-        </div>
-      )}
+        ) : (
+          <div className="flex-1 flex flex-col items-center justify-center bg-transparent text-gray-500">
+            <img
+              src="/src/assets/images/skilllink-logo.png"
+              className="h-24 opacity-20 mb-4 grayscale"
+              alt="Logo"
+            />
+            <p>Select a session to start messaging</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
