@@ -6,13 +6,14 @@ import { updateRequestStatus } from "../../services/requestService";
 
 // Props for the Review Modal
 interface ReviewModalProps {
-    sessionId: string;
+    sessionId: string; // The SkillRequest ID (for status update)
+    sessionBoardId: string; // The SessionBoard ID (for review creation)
     teacherId: string;
     onClose: () => void;
     onReviewSubmitted: () => void; // Callback to refresh parent UI
 }
 
-const ReviewModal = ({ sessionId, teacherId, onClose, onReviewSubmitted }: ReviewModalProps) => {
+const ReviewModal = ({ sessionId, sessionBoardId, teacherId, onClose, onReviewSubmitted }: ReviewModalProps) => {
     const [rating, setRating] = useState(0);
     const [reviewText, setReviewText] = useState("");
     const [hoveredRating, setHoveredRating] = useState(0);
@@ -45,7 +46,7 @@ const ReviewModal = ({ sessionId, teacherId, onClose, onReviewSubmitted }: Revie
         try {
             // Construct Review Data
             const reviewData: CreateReviewRequest = {
-                sessionId,
+                sessionId: sessionBoardId, // Use SessionBoard ID for Review Creation
                 reviewedId: teacherId,
                 rating,
                 reviewText,
