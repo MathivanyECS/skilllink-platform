@@ -4,6 +4,10 @@ import com.university.skilllink.dto.profile.CreateProfileRequest;
 import com.university.skilllink.dto.profile.ProfileDTO;
 
 import java.util.List;
+import java.util.Optional;
+
+import org.springframework.web.multipart.MultipartFile;
+
 
 /**
  * Service interface for Profile management operations
@@ -18,6 +22,10 @@ public interface ProfileService {
      * @return Created profile DTO
      */
     ProfileDTO createProfile(String userId, CreateProfileRequest request);
+    String updateProfilePicture(String userId, MultipartFile file);
+
+
+
 
     /**
      * Get profile by user ID
@@ -70,6 +78,8 @@ public interface ProfileService {
      * @return Updated profile DTO
      */
     ProfileDTO updateProfile(String userId, CreateProfileRequest request);
+    Optional<ProfileDTO> getProfileOptionalByUserId(String userId);
+
 
     /**
      * Delete profile by user ID

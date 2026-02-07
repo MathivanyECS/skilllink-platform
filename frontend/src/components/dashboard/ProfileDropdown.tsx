@@ -49,10 +49,12 @@ const ProfileDropdown = ({ onClose }: Props) => {
   };
 
   return (
+
     <div style={dropdownStyle} ref={dropdownRef}>
       <div style={itemStyle} onClick={() => handleNavigate("/edit-profile")}>
         Edit Profile
       </div>
+
 
       <div style={divider} />
       <div style={divider} />

@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.*;
 
@@ -24,32 +25,33 @@ public class ProfileController {
     private final UserService userService;
 
     // =========================================================
-    // 🧠 AI FEATURE 1: SEMANTIC SKILL CATEGORIES
+    //  AI FEATURE 1: SEMANTIC SKILL CATEGORIES
     // High-level concepts → real skills
     // =========================================================
     private static final Map<String, List<String>> SKILL_SYNONYMS = Map.of(
             "frontend", List.of("react", "angular", "vue", "html", "css", "javascript"),
             "backend", List.of("java", "spring", "node", "django", "express"),
             "mobile", List.of("android", "ios", "flutter", "react native"),
-            "data", List.of("data science", "data analysis", "sql", "python"),
+            "data", List.of("data science", "data analysis", "sql", "python","data base"),
             "ai", List.of("machine learning", "deep learning", "ml", "nlp"),
 
-            // 🧠 SOFT SKILLS (VERY IMPORTANT FOR MARKS)
+            //  SOFT SKILLS 
             "communication", List.of("english", "presentation", "public speaking"),
             "english", List.of("communication", "presentation", "writing"),
             "presentation", List.of("communication", "english", "speaking"));
 
     // =========================================================
-    // 🧠 AI FEATURE 2: FUZZY MATCH (typos + case)
+    // AI FEATURE 2: FUZZY MATCH (typos + case)
     // =========================================================
     private boolean fuzzyMatch(String a, String b) {
-        a = a.toLowerCase();
-        b = b.toLowerCase();
-        return a.contains(b) || b.contains(a);
-    }
+    a = a.toLowerCase().replaceAll("\\s+", "");
+    b = b.toLowerCase().replaceAll("\\s+", "");
+    return a.contains(b) || b.contains(a);
+}
+
 
     // =========================================================
-    // 🧠 AI FEATURE 3: PREFIX INTELLIGENCE
+    // AI FEATURE 3: PREFIX INTELLIGENCE
     // Example: "r" → react, rust
     // =========================================================
     private boolean prefixMatch(String skillName, String input) {
@@ -97,6 +99,32 @@ public class ProfileController {
         ProfileDTO profile = profileService.createProfile(userId, request);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(profile);
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<ProfileDTO> getMyProfile(Authentication authentication) {
+
+        String email = authentication.getName(); // from JWT
+        String userId = userService.getUserByEmail(email).getId();
+
+        return profileService
+                .getProfileOptionalByUserId(userId)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PutMapping("/me/profile-picture")
+    public ResponseEntity<Map<String, String>> uploadProfilePicture(
+            @RequestParam("file") MultipartFile file) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        String email = authentication.getName();
+        String userId = userService.getUserByEmail(email).getId();
+
+        String imageUrl = profileService.updateProfilePicture(userId, file);
+
+        return ResponseEntity.ok(
+                Map.of("profilePicture", imageUrl));
     }
 
     @GetMapping("/{userId}")
@@ -158,6 +186,18 @@ public class ProfileController {
     public ResponseEntity<ProfileDTO> updateProfile(
             @PathVariable String userId,
             @Valid @RequestBody CreateProfileRequest request) {
+        return ResponseEntity.ok(
+                profileService.updateProfile(userId, request));
+    }
+
+    @PutMapping("/me")
+    public ResponseEntity<ProfileDTO> updateMyProfile(
+            Authentication authentication,
+            @Valid @RequestBody CreateProfileRequest request) {
+
+        String email = authentication.getName();
+        String userId = userService.getUserByEmail(email).getId();
+
         return ResponseEntity.ok(
                 profileService.updateProfile(userId, request));
     }

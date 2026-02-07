@@ -69,7 +69,8 @@ public class SkillRequestController {
             return ResponseEntity.ok(List.of()); // keep safe response
         }
 
-        // LOGIC: Try to find requests using the user's canonical ID first (most reliable)
+        // LOGIC: Try to find requests using the user's canonical ID first (most
+        // reliable)
         // This handles cases where providerId in requests matches user._id
         String userId = user.getId();
         System.out.println("[DEBUG] trying providerId (canonical) = " + userId);
@@ -80,7 +81,8 @@ public class SkillRequestController {
         }
 
         // LOGIC: Fallback to studentId matching
-        // This handles cases where requests were created using studentId as providerIdentifier
+        // This handles cases where requests were created using studentId as
+        // providerIdentifier
         // NOTE: replace getStudentId() with the actual field name if different
         try {
             String studentId = (String) user.getClass().getMethod("getStudentId").invoke(user);
@@ -104,13 +106,17 @@ public class SkillRequestController {
 
     @GetMapping("/sent")
     public ResponseEntity<List<SkillRequest>> sent(Authentication auth) {
-        if (auth == null || !auth.isAuthenticated())
+
+        if (auth == null || !auth.isAuthenticated()) {
             return ResponseEntity.status(401).build();
+        }
+
         String email = auth.getName();
         var user = userService.getUserByEmail(email);
+
         if (user == null)
             return ResponseEntity.status(401).build();
-        
+
         return ResponseEntity.ok(requestService.getSentRequests(user.getId()));
     }
 
@@ -166,6 +172,5 @@ public class SkillRequestController {
         var list = requestService.getIncomingRequests(providerId);
         return ResponseEntity.ok(list);
     }
-
 
 }

@@ -7,30 +7,25 @@ import UserDashboard from "../pages/UserDashboard";
 import AdminDashboard from "../pages/AdminDashboard";
 import CreateProfile from "../pages/CreateProfile";
 
-// ✅ NEW imports (added)
-import EditProfile from "../pages/EditProfile";
 import Sessions from "../pages/Sessions";
 import Collaboration from "../pages/Collaboration";
-import ProtectedRoute from "./ProtectedRoute"; // Import ProtectedRoute
+import ProtectedRoute from "./ProtectedRoute";
 
 const AppRoutes = () => (
   <Routes>
-    {/* Existing routes */}
+    {/* 🌍 PUBLIC ROUTES */}
     <Route path="/" element={<GetStarted />} />
     <Route path="/login" element={<Login />} />
-    <Route path="/dashboard" element={<UserDashboard />} />
-    <Route path="/admin-dashboard" element={<AdminDashboard />} />
     <Route path="/register" element={<Register />} />
-    <Route path="/create-profile" element={<CreateProfile />} />
 
-    {/* ✅ NEW routes for Profile Dropdown */}
+    {/* 🔐 PROTECTED ROUTES */}
     <Route element={<ProtectedRoute />}>
-      <Route path="/edit-profile" element={<EditProfile />} />
-      <Route path="/sessions" element={<Sessions />} />
-      <Route path="/collaboration" element={<Collaboration />} />
       <Route path="/dashboard" element={<UserDashboard />} />
       <Route path="/admin-dashboard" element={<AdminDashboard />} />
       <Route path="/create-profile" element={<CreateProfile />} />
+      <Route path="/edit-profile" element={<CreateProfile />} />
+      <Route path="/sessions" element={<Sessions />} />
+      <Route path="/collaboration" element={<Collaboration />} />
     </Route>
   </Routes>
 );

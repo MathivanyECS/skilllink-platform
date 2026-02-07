@@ -136,4 +136,9 @@ public class ProfileDTO {
 
         return dto;
     }
+
+    public static ProfileDTO fromProfile(Profile profile, String fullName, String email) {
+        return fromProfile(profile, fullName, email, null);
+    }
+
 }
