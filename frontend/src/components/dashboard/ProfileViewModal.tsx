@@ -55,8 +55,8 @@ const ProfileViewModal = ({ open, userId, onClose }: Props) => {
   if (!open || !profile) return null;
 
   return (
-    <div style={overlay}>
-      <div style={modal}>
+    <div style={overlay} onClick={onClose}>
+      <div style={modal} onClick={(e) => e.stopPropagation()}>
 
         {/* HEADER */}
         <h1 style={name}>{profile.fullName}</h1>
