@@ -6,14 +6,37 @@ interface Props {
   userId: string | null;
   onClose: () => void;
 }
+interface Profile {
+  id: string;
+  fullName: string;
+  studentId?: string;
+  email: string;
+  department: string;
+  yearOfStudy: number;
+  profilePicture?: string;
+  skillsToLearn?: string[];
+  skillsToTeach?: { skillName: string }[];
+}
 
 const BACKEND_URL = "http://localhost:8081";
 const DEFAULT_AVATAR =
   "https://cdn-icons-png.flaticon.com/512/149/149071.png";
 
 const ProfileViewModal = ({ open, userId, onClose }: Props) => {
-  const [profile, setProfile] = useState<any>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
+
+
   const [rating, setRating] = useState(0);
+
+  const getProfileImageUrl = (): string => {
+    if (!profile?.profilePicture) return DEFAULT_AVATAR;
+
+    if (profile.profilePicture.startsWith("http")) {
+      return profile.profilePicture;
+    }
+
+    return `${BACKEND_URL}${profile.profilePicture}`;
+  };
 
   // ✅ RESET STATE WHEN USER CHANGES
   useEffect(() => {
@@ -43,12 +66,10 @@ const ProfileViewModal = ({ open, userId, onClose }: Props) => {
             height: 120,
             borderRadius: "50%",
             margin: "0 auto 20px",
-            backgroundImage: `url(${profile.profilePicture
-                ? `${BACKEND_URL}${profile.profilePicture}`
-                : DEFAULT_AVATAR
-              })`,
+            backgroundImage: `url(${getProfileImageUrl()})`,
             backgroundSize: "cover",
-            backgroundPosition: "center"
+            backgroundPosition: "center",
+            border: "3px solid #38AE56"
           }}
         />
 
