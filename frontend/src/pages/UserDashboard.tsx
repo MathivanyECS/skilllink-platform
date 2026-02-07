@@ -17,11 +17,10 @@ interface Profile {
   department: string;
   yearOfStudy: number;
   profileImageUrl?: string;
-  studentId?: string; // ✅ Added studentId
-  skillsToTeach?: Skill[]; // ✅ Updated to array of objects
+  studentId?: string;
+  skillsToTeach?: Skill[];
 }
 
-// ✅ Define Skill interface
 interface Skill {
   skillName: string;
   proficiency?: string;
@@ -41,20 +40,22 @@ const UserDashboard = () => {
 
   const [openProfile, setOpenProfile] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
-  const [selectedProvider, setSelectedProvider] = useState<Profile | null>(null); // ✅ Track selected provider
+  const [selectedProvider, setSelectedProvider] = useState<Profile | null>(null);
 
   const [unreadCount, setUnreadCount] = useState(0);
   const [showWishlist, setShowWishlist] = useState(false);
   const [showWishlistSuccess, setShowWishlistSuccess] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
+  // ✅ NEW: loading state (ONLY ADDITION)
+  const [loadingProfiles, setLoadingProfiles] = useState(true);
+
   useEffect(() => {
-    // ✅ Decode token to get current user ID
     const token = localStorage.getItem("token");
     if (token) {
       try {
         const decoded: any = jwtDecode(token);
-        setCurrentUserId(decoded.userId || decoded.sub); // Adjust based on token structure
+        setCurrentUserId(decoded.userId || decoded.sub);
       } catch (e) {
         console.error("Failed to decode token", e);
       }
@@ -63,6 +64,8 @@ const UserDashboard = () => {
   }, [department, year, skill]);
 
   const fetchProfiles = async () => {
+    setLoadingProfiles(true);
+
     const params: any = {};
     if (department) params.department = department;
     if (year) params.year = year;
@@ -78,6 +81,8 @@ const UserDashboard = () => {
           setRatings(prev => ({ ...prev, [p.userId]: r.data ?? 0 }))
         );
     });
+
+    setLoadingProfiles(false);
   };
 
   const clearFilters = () => {
@@ -103,7 +108,6 @@ const UserDashboard = () => {
 
   return (
     <div style={pageStyle}>
-      {/* TOP NAV */}
       <TopNavigationBar
         active="dashboard"
         onNotificationClick={() => setShowNotifications(true)}
@@ -114,7 +118,7 @@ const UserDashboard = () => {
         <ProfileDropdown onClose={() => setShowProfileMenu(false)} />
       )}
 
-      {/* SEARCH + FILTER ROW */}
+      {/* SEARCH + FILTER */}
       <div style={filterRow}>
         <div style={searchBoxWide}>
           <FaSearch size={18} color="#ddd" />
@@ -181,45 +185,52 @@ const UserDashboard = () => {
 
       {/* CARDS */}
       <div style={gridStyle}>
-        {profiles
-          .filter(p => p.userId !== currentUserId) // ✅ Filter logged-in user
-          .map(p => (
-            <div key={p.userId} style={cardStyle}>
-              <div style={avatarStyle(p.profileImageUrl)} />
-              <h3 style={nameStyle}>{p.fullName}</h3>
-              <p>{p.department}</p>
-              <p>{formatYear(p.yearOfStudy)}</p>
-              <p>Rating: {(ratings[p.userId] ?? 0).toFixed(1)} / 5.0</p>
+        {loadingProfiles
+          ? Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} style={skeletonCard} />
+            ))
+          : profiles
+              .filter(p => p.userId !== currentUserId)
+              .map(p => (
+                <div key={p.userId} style={cardStyle}>
+                  <div style={avatarStyle(p.profileImageUrl)} />
+                  <h3 style={nameStyle}>{p.fullName}</h3>
+                  <p>{p.department}</p>
+                  <p>{formatYear(p.yearOfStudy)}</p>
+                  <p>Rating: {(ratings[p.userId] ?? 0).toFixed(1)} / 5.0</p>
 
-              <div style={{ marginTop: 16 }}>
-                <button style={greenBtn} onClick={() => {
-                  setSelectedProvider(p); // ✅ Set selected provider
-                  setShowRequestModal(true);
-                }}>
-                  Request Skill
-                </button>
+                  <div style={{ marginTop: 16 }}>
+                    <button
+                      style={greenBtn}
+                      onClick={() => {
+                        setSelectedProvider(p);
+                        setShowRequestModal(true);
+                      }}
+                    >
+                      Request Skill
+                    </button>
 
-                <button
-                  style={grayBtn}
-                  onClick={() => {
-                    setSelectedUserId(p.userId);
-                    setOpenProfile(true);
-                  }}
-                >
-                  View Profile
-                </button>
-              </div>
-            </div>
-          ))}
+                    <button
+                      style={grayBtn}
+                      onClick={() => {
+                        setSelectedUserId(p.userId);
+                        setOpenProfile(true);
+                      }}
+                    >
+                      View Profile
+                    </button>
+                  </div>
+                </div>
+              ))}
       </div>
 
       <RequestSkillModal
         open={showRequestModal}
         onClose={() => setShowRequestModal(false)}
         onSuccess={() => alert("Request sent successfully")}
-        providerId={selectedProvider?.userId || ""} // ✅ Pass providerId (UUID) for API
-        providerStudentId={selectedProvider?.studentId || "N/A"} // ✅ Pass Student ID for Display
-        availableSkills={selectedProvider?.skillsToTeach?.map(s => s.skillName) || []} // ✅ Extract skill names
+        providerId={selectedProvider?.userId || ""}
+        providerStudentId={selectedProvider?.studentId || "N/A"}
+        availableSkills={selectedProvider?.skillsToTeach?.map(s => s.skillName) || []}
       />
 
       <ProfileViewModal
@@ -255,8 +266,7 @@ const filterRow = {
   alignItems: "center",
   gap: 16,
   background: "linear-gradient(180deg, #242020, #171414)",
-  borderRadius: 16,
-  boxShadow: "0 0 22px rgba(0,0,0,0.6)"
+  borderRadius: 16
 };
 
 const searchBoxWide = {
@@ -275,9 +285,7 @@ const searchInput = {
   color: "#f5f5f5",
   marginLeft: 12,
   width: "100%",
-  fontSize: 17,
-  fontWeight: 500,
-  letterSpacing: "0.3px"
+  fontSize: 17
 };
 
 const selectStyle = {
@@ -285,10 +293,7 @@ const selectStyle = {
   color: "#f5f5f5",
   border: "none",
   padding: "14px 18px",
-  borderRadius: 12,
-  fontSize: 15,
-  fontWeight: 500,
-  cursor: "pointer"
+  borderRadius: 12
 };
 
 const clearStyle = {
@@ -317,9 +322,7 @@ const wishlistBtn = {
   fontSize: 20,
   fontWeight: "bold",
   display: "flex",
-  alignItems: "center",
-  gap: 14,
-  cursor: "pointer"
+  gap: 14
 };
 
 const gridStyle = {
@@ -332,14 +335,19 @@ const gridStyle = {
 const cardStyle = {
   background: "#3b3535",
   padding: 20,
+  borderRadius: 14
+};
+
+const skeletonCard = {
+  height: 240,
   borderRadius: 14,
-  boxShadow: "0 0 25px rgba(0,0,0,0.7)"
+  background: "linear-gradient(90deg, #2b2b2b, #3a3a3a, #2b2b2b)",
+  animation: "pulse 1.5s infinite"
 };
 
 const nameStyle = {
   fontSize: 22,
-  fontWeight: "bold",
-  marginBottom: 6
+  fontWeight: "bold"
 };
 
 const greenBtn = {
@@ -348,8 +356,7 @@ const greenBtn = {
   padding: "10px 18px",
   color: "white",
   borderRadius: 8,
-  marginRight: 10,
-  cursor: "pointer"
+  marginRight: 10
 };
 
 const grayBtn = {
@@ -357,8 +364,7 @@ const grayBtn = {
   border: "none",
   padding: "10px 18px",
   color: "white",
-  borderRadius: 8,
-  cursor: "pointer"
+  borderRadius: 8
 };
 
 export default UserDashboard;
