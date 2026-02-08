@@ -20,6 +20,10 @@ public class CollaborationApplication {
     private String postId;        // CollaborationPost.id
     private String applicantId;   // userId of applicant
     private String message;       // optional applicant message
+    private String contactInfo;   // NEW: contact link or email
+    
+    private String applicantName;  // NEW: snapshot of name
+    private String applicantEmail; // NEW: snapshot of email
 
     private ApplicationStatus status; // PENDING, ACCEPTED, REJECTED
 

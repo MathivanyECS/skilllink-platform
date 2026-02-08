@@ -11,7 +11,7 @@ public interface CollaborationService {
 
     CollaborationPost createPost(String creatorUserId, CollabPostDTO dto);
 
-    List<CollaborationPost> listAllOpenPosts();
+    List<CollaborationPost> listAllPosts();
 
     CollaborationPost getPostById(String postId);
 
@@ -22,6 +22,8 @@ public interface CollaborationService {
     CollaborationApplication applyToPost(String applicantUserId, String postId, CollabApplicationDTO dto);
 
     List<CollaborationApplication> listApplications(String postId, String userId);
+
+    List<CollaborationApplication> getMyApplications(String userId);
 
     CollaborationApplication respondToApplication(String postId, String applicationId, String userId, boolean accept);
 
