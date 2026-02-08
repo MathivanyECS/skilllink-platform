@@ -10,6 +10,9 @@ import CreateProfile from "../pages/CreateProfile";
 import Sessions from "../pages/Sessions";
 import Collaboration from "../pages/Collaboration";
 import ProtectedRoute from "./ProtectedRoute";
+import ForgotPassword from "../pages/ForgotPassword";
+import PasswordReset from "../components/auth/PasswordReset";
+
 
 const AppRoutes = () => (
   <Routes>
@@ -17,6 +20,9 @@ const AppRoutes = () => (
     <Route path="/" element={<GetStarted />} />
     <Route path="/login" element={<Login />} />
     <Route path="/register" element={<Register />} />
+    <Route path="/forgot-password" element={<ForgotPassword />} />
+    <Route path="/reset-password" element={<PasswordReset />} />
+
 
     {/* 🔐 PROTECTED ROUTES */}
     <Route element={<ProtectedRoute />}>
