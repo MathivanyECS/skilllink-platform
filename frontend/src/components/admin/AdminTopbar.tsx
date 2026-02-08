@@ -19,8 +19,7 @@ const AdminTopbar = () => {
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
-    navigate("/login?role=admin");
-  };
+navigate("/", { replace: true });  };
 
   return (
     <header className="sticky top-0 z-30 border-b border-white/10 bg-black/35 backdrop-blur">
@@ -34,10 +33,10 @@ const AdminTopbar = () => {
 
         <div className="flex items-center gap-3">
           <button
-            onClick={() => navigate("/")}
+            onClick={() => navigate("/admin-dashboard")}
             className="px-3 py-2 text-sm rounded-lg border border-white/10 hover:bg-white/5 transition"
           >
-            Back to Site
+            Admin Console
           </button>
 
           <button

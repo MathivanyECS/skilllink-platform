@@ -89,7 +89,7 @@ const CollaborationPostsPage = () => {
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by title, description, or id..."
+            placeholder="Search by title, description, or post id..."
             className="w-full md:w-[360px] px-4 py-2 rounded-xl bg-black/50 border border-white/10 focus:outline-none focus:border-green-400"
           />
           <button

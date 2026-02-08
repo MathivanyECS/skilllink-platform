@@ -11,12 +11,7 @@ import { ActiveUserDTO, UserDTO } from "../../types/admin";
  * If you don't have backend endpoints yet, this page uses:
  * - GET /api/admin/active-users
  * - GET /api/admin/users
- *
- * Later, you can extend backend for:
- * - uptime
- * - error rate
- * - request latency
- * - DB health
+ * 
  */
 const SystemHealthPage = () => {
   const [users, setUsers] = useState<UserDTO[] | null>(null);
