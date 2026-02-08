@@ -24,14 +24,27 @@ const Login = () => {
       // save token and userId
       localStorage.setItem("token", token);
       localStorage.setItem("userId", user.id);
+      localStorage.setItem("user", JSON.stringify(user));
+
 
 
       if (user.role === "ADMIN") {
-        navigate("/admin-dashboard");
-      } else if (!user.isProfileCompleted) {
-        navigate("/create-profile");
+        // ✅ allow admin
+        navigate("/admin-dashboard", { replace: true });
+
       } else {
-        navigate("/dashboard");
+        // ❌ normal user tried admin login
+        if (role === "admin") {
+          setErrorMsg("This login is only for Admin.");
+          return;
+        }
+
+        // ✅ normal student login (unchanged)
+        if (!user.isProfileCompleted) {
+          navigate("/create-profile", { replace: true });
+        } else {
+          navigate("/dashboard", { replace: true });
+        }
       }
 
     } catch (error: any) {
@@ -109,6 +122,15 @@ const Login = () => {
             >
               Sign In
             </button>
+            <p className="text-sm text-right mt-2">
+              <a
+                href="/forgot-password"
+                className="text-green-400 hover:underline"
+              >
+                Forgot password?
+              </a>
+            </p>
+
           </form>
 
           {/* ================= OR DIVIDER ================= */}
