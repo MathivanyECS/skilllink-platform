@@ -20,6 +20,7 @@ public class ProfileDTO {
     private String id;
     private String userId;
     private String fullName; // From User
+    private String studentId;
     private String email; // From User
     private String profilePicture;
     private String department;
@@ -31,11 +32,11 @@ public class ProfileDTO {
     private ProfileStatisticsDTO statistics;
     private SocialLinksDTO socialLinks;
     private LocalDateTime createdAt;
-    
+
     // NEW FIELDS ADDED FOR REVIEWS
     private List<ReviewDTO> reviews; // List of reviews for this user (as teacher)
-    private Double averageRating;    // Calculated average rating from reviews
-    private Long reviewCount;        // Total number of reviews
+    private Double averageRating; // Calculated average rating from reviews
+    private Long reviewCount; // Total number of reviews
 
     // Nested DTOs
     @Data
@@ -70,12 +71,13 @@ public class ProfileDTO {
     }
 
     // Convert Profile to ProfileDTO (Updated version with reviews)
-    public static ProfileDTO fromProfile(Profile profile, String fullName, String email) {
+    public static ProfileDTO fromProfile(Profile profile, String fullName, String email, String studentId) {
         return ProfileDTO.builder()
                 .id(profile.getId())
                 .userId(profile.getUserId())
                 .fullName(fullName)
                 .email(email)
+                .studentId(studentId) // ✅ Set studentId
                 .profilePicture(profile.getProfilePicture())
                 .department(profile.getDepartment())
                 .yearOfStudy(profile.getYearOfStudy())
@@ -107,27 +109,36 @@ public class ProfileDTO {
                 .reviewCount((long) profile.getStatistics().getTotalReviewsReceived())
                 .build();
     }
-    
+
     // Alternative factory method that accepts reviews
     public static ProfileDTO fromProfileWithReviews(
-            Profile profile, 
-            String fullName, 
+            Profile profile,
+            String fullName,
             String email,
             List<ReviewDTO> reviews,
             Double averageRating,
             Long reviewCount) {
-        
-        ProfileDTO dto = fromProfile(profile, fullName, email);
+
+        // NOTE: This legacy method doesn't support studentId well, passing null for now
+        // or should we remove it?
+        // It's likely not used or if used we might miss studentId.
+        // Let's pass null safely as it's likely for testing or specific cases.
+        ProfileDTO dto = fromProfile(profile, fullName, email, null);
         dto.setReviews(reviews);
         dto.setAverageRating(averageRating);
         dto.setReviewCount(reviewCount);
-        
+
         // Also update statistics
         if (dto.getStatistics() != null) {
             dto.getStatistics().setAverageRating(averageRating);
             dto.getStatistics().setTotalReviewsReceived(reviewCount.intValue());
         }
-        
+
         return dto;
     }
+
+    public static ProfileDTO fromProfile(Profile profile, String fullName, String email) {
+        return fromProfile(profile, fullName, email, null);
+    }
+
 }

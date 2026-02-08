@@ -17,7 +17,6 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/session-boards")
 @RequiredArgsConstructor
-@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:5173"})
 public class SessionBoardController {
     
     private final SessionBoardService sessionBoardService;
@@ -69,6 +68,13 @@ public class SessionBoardController {
         SessionBoardDTO sessionBoard = sessionBoardService.updateProgressNotes(id, progressNotes);
         return ResponseEntity.ok(sessionBoard);
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteSessionBoard(@PathVariable String id) {
+        sessionBoardService.deleteSessionBoard(id);
+        return ResponseEntity.noContent().build();
+    }
+
 
     // ✅ UPDATED ENDPOINT WITH VALIDATION
     @PostMapping("/create-from-request")

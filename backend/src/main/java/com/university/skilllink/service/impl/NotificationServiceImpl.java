@@ -20,20 +20,43 @@ public class NotificationServiceImpl implements NotificationService {
 
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
+    private final org.springframework.messaging.simp.SimpMessagingTemplate messagingTemplate;
 
     // ------------------- Creation / Sending -------------------
     @Override
     public Notification createNotification(Notification notification) {
-        if (notification == null) return null;
-        if (notification.getCreatedAt() == null) notification.setCreatedAt(LocalDateTime.now());
-        if (notification.getRead() == null) notification.setRead(false);
-        if (notification.getMetadata() == null) notification.setMetadata(Map.of());
-        return notificationRepository.save(notification);
+        if (notification == null)
+            return null;
+        if (notification.getCreatedAt() == null)
+            notification.setCreatedAt(LocalDateTime.now());
+        if (notification.getRead() == null)
+            notification.setRead(false);
+        if (notification.getMetadata() == null)
+            notification.setMetadata(Map.of());
+
+        Notification saved = notificationRepository.save(notification);
+
+        // 🔥 REAL-TIME UPDATE
+        if (saved.getUserId() != null) {
+            messagingTemplate.convertAndSendToUser(
+                    saved.getUserId(),
+                    "/queue/notifications",
+                    saved);
+        }
+
+        return saved;
     }
 
     @Override
-    public Notification sendToUser(String userId, NotificationType type, String title, String message, Map<String, String> metadata) {
-        if (userId == null) return null;
+    public Notification sendToUser(
+            String userId,
+            NotificationType type,
+            String title,
+            String message,
+            Map<String, String> metadata) {
+        if (userId == null)
+            return null;
+
         Notification n = Notification.builder()
                 .userId(userId)
                 .type(type)
@@ -43,13 +66,19 @@ public class NotificationServiceImpl implements NotificationService {
                 .createdAt(LocalDateTime.now())
                 .read(false)
                 .build();
-        return notificationRepository.save(n);
+
+        return createNotification(n); // reuse wrapper to send real-time
     }
 
     @Override
-    public void sendToAllUsers(NotificationType type, String title, String message, Map<String, String> metadata) {
+    public void sendToAllUsers(
+            NotificationType type,
+            String title,
+            String message,
+            Map<String, String> metadata) {
         List<User> users = userRepository.findAll();
         List<Notification> batch = new ArrayList<>();
+
         for (User u : users) {
             if (u != null && Boolean.TRUE.equals(u.getIsActive())) {
                 Notification n = Notification.builder()
@@ -64,26 +93,48 @@ public class NotificationServiceImpl implements NotificationService {
                 batch.add(n);
             }
         }
-        if (!batch.isEmpty()) notificationRepository.saveAll(batch);
+
+        if (!batch.isEmpty()) {
+            notificationRepository.saveAll(batch);
+        }
     }
 
     @Override
-    public void sendToUser(String userId, String type, String title, String message, Map<String, String> meta) {
+    public void sendToUser(
+            String userId,
+            String type,
+            String title,
+            String message,
+            Map<String, String> meta) {
         NotificationType notifType;
-        try { notifType = NotificationType.valueOf(type); } catch (Exception ex) { notifType = NotificationType.GENERIC; }
+        try {
+            notifType = NotificationType.valueOf(type);
+        } catch (Exception ex) {
+            notifType = NotificationType.GENERIC;
+        }
         sendToUser(userId, notifType, title, message, meta);
     }
 
     @Override
-    public void sendToAllUsers(String type, String title, String message, Map<String, String> meta) {
+    public void sendToAllUsers(
+            String type,
+            String title,
+            String message,
+            Map<String, String> meta) {
         NotificationType notifType;
-        try { notifType = NotificationType.valueOf(type); } catch (Exception ex) { notifType = NotificationType.GENERIC; }
+        try {
+            notifType = NotificationType.valueOf(type);
+        } catch (Exception ex) {
+            notifType = NotificationType.GENERIC;
+        }
         sendToAllUsers(notifType, title, message, meta);
     }
 
     @Override
     public void send(String userId, String content, String link) {
-        if (userId == null) return;
+        if (userId == null)
+            return;
+
         Notification n = Notification.builder()
                 .userId(userId)
                 .type(NotificationType.GENERIC)
@@ -93,7 +144,24 @@ public class NotificationServiceImpl implements NotificationService {
                 .createdAt(LocalDateTime.now())
                 .read(false)
                 .build();
+
         notificationRepository.save(n);
+    }
+
+    // ------------------- ✅ NEW: REQUEST SENT (PENDING) -------------------
+    public void sendRequestSentNotification(
+            String senderUserId,
+            String skillName,
+            String providerName) {
+        sendToUser(
+                senderUserId,
+                NotificationType.REQUEST_SENT,
+                "Request Sent",
+                "Your skill request has been sent",
+                Map.of(
+                        "skillName", skillName,
+                        "providerName", providerName,
+                        "status", "PENDING"));
     }
 
     // ------------------- Read -------------------
@@ -130,9 +198,11 @@ public class NotificationServiceImpl implements NotificationService {
     public void markAsRead(String notificationId, String userId) {
         Notification notification = notificationRepository.findById(notificationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Notification not found"));
+
         if (!notification.getUserId().equals(userId)) {
             throw new ForbiddenException("You cannot modify another user's notification");
         }
+
         notification.setRead(true);
         notificationRepository.save(notification);
     }
@@ -140,8 +210,12 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     public void markAllAsRead(String userId) {
         List<Notification> notifications = notificationRepository.findByUserIdAndReadFalseOrderByCreatedAtDesc(userId);
+
         notifications.forEach(n -> n.setRead(true));
-        if (!notifications.isEmpty()) notificationRepository.saveAll(notifications);
+
+        if (!notifications.isEmpty()) {
+            notificationRepository.saveAll(notifications);
+        }
     }
 
     // ------------------- Delete -------------------

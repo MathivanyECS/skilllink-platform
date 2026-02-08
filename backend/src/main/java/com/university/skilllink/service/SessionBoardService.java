@@ -25,4 +25,5 @@ public interface SessionBoardService {
     List<SessionBoardDTO> getSessionBoardsByTeacher(String teacherId);
     SessionBoardDTO updateMeeting(String sessionBoardId, LocalDateTime meetingDateTime, String meetingLocation);
     SessionBoardDTO updateProgressNotes(String sessionBoardId, String progressNotes);
+    void deleteSessionBoard(String id);
 }

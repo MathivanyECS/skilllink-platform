@@ -27,8 +27,12 @@ public class SkillRequestServiceImpl implements RequestService {
     private final UserRepository userRepository;
     private final SessionBoardService sessionBoardService;
 
+    // ======================================================
+    // SEND REQUEST (SEEKER → PROVIDER)
+    // ======================================================
     @Override
     public SkillRequest sendRequest(String seekerId, String providerIdentifier, String skillName, String note) {
+
         String providerId = resolveProviderId(providerIdentifier);
         if (providerId == null) {
             throw new RuntimeException("Provider not found for identifier: " + providerIdentifier);
@@ -45,10 +49,24 @@ public class SkillRequestServiceImpl implements RequestService {
 
         SkillRequest saved = skillRequestRepository.save(req);
 
+        // ✅ FETCH SEEKER USER
+        User seeker = userRepository.findById(seekerId)
+                .orElseThrow(() -> new RuntimeException("Seeker not found: " + seekerId));
+
+        // ✅ FETCH PROVIDER USER (FOR SEEKER NOTIFICATION)
+        User provider = userRepository.findById(providerId)
+                .orElseThrow(() -> new RuntimeException("Provider not found: " + providerId));
+
+        // ======================================================
+        // 🔔 PROVIDER NOTIFICATION (NEW REQUEST)
+        // Checks if provider exists and sends real-time notification
+        // ======================================================
         Map<String, String> meta = new HashMap<>();
         meta.put("requestId", saved.getId());
-        meta.put("seekerId", seekerId);
         meta.put("skillName", skillName);
+        meta.put("studentId", seeker.getStudentId() != null ? seeker.getStudentId() : "");
+        meta.put("studentName", seeker.getFullName() != null ? seeker.getFullName() : "");
+        meta.put("note", note != null ? note : "");
 
         Notification notification = Notification.builder()
                 .userId(providerId)
@@ -61,96 +79,122 @@ public class SkillRequestServiceImpl implements RequestService {
                 .build();
 
         notificationService.createNotification(notification);
+
+        // ======================================================
+        // 🔔 SEEKER NOTIFICATION (REQUEST SENT → PENDING)
+        // ======================================================
+        notificationService.sendRequestSentNotification(
+                seekerId,
+                skillName,
+                provider.getFullName());
+
         return saved;
     }
 
+    // ======================================================
+    // GET REQUESTS
+    // ======================================================
     @Override
     public List<SkillRequest> getIncomingRequests(String providerId) {
-        if (providerId == null) return Collections.emptyList();
+        if (providerId == null)
+            return Collections.emptyList();
         return skillRequestRepository.findByProviderIdOrderByCreatedAtDesc(providerId);
     }
 
     @Override
     public List<SkillRequest> getSentRequests(String seekerId) {
-        if (seekerId == null) return Collections.emptyList();
+        if (seekerId == null)
+            return Collections.emptyList();
         return skillRequestRepository.findBySeekerIdOrderByCreatedAtDesc(seekerId);
     }
 
+    // ======================================================
+    // UPDATE STATUS (PROVIDER → SEEKER)
+    // ======================================================
     @Override
     public SkillRequest updateStatus(String requestId, String actorId, String status) {
-        System.out.println("🎯 [DEBUG] updateStatus called");
-        System.out.println("🎯 [DEBUG] requestId: " + requestId);
-        System.out.println("🎯 [DEBUG] actorId: " + actorId);
-        System.out.println("🎯 [DEBUG] status param: " + status);
 
         SkillRequest req = skillRequestRepository.findById(requestId)
                 .orElseThrow(() -> new RuntimeException("Request not found: " + requestId));
 
-        Optional<User> actorOpt = userRepository.findById(actorId);
-        if (actorOpt.isEmpty()) {
-            throw new RuntimeException("Actor user not found: " + actorId);
+        User actor = userRepository.findById(actorId)
+                .orElseThrow(() -> new RuntimeException("Actor user not found: " + actorId));
+
+        // AUTHORIZATION:
+        // 1. Provider can accept/reject
+        // 2. Seeker (Student) can mark as COMPLETED (when reviewing)
+        boolean isProvider = actorId.equals(req.getProviderId()) ||
+                (actor.getStudentId() != null && actor.getStudentId().equals(req.getProviderId())) ||
+                actor.getEmail().equals(req.getProviderId());
+        
+        boolean isSeeker = actorId.equals(req.getSeekerId());
+
+        SkillRequest.RequestStatus newStatus = SkillRequest.RequestStatus.valueOf(status.toUpperCase());
+
+        if (newStatus == SkillRequest.RequestStatus.COMPLETED) {
+            if (!isSeeker && !isProvider) { // Allow both to complete? Or just seeker? Usually seeker reviews.
+                 throw new RuntimeException("Only participants can mark session as completed");
+            }
+        } else {
+             // For ACCEPT/REJECT, must be provider
+             if (!isProvider) {
+                 throw new RuntimeException("Only provider can update status to " + newStatus);
+             }
         }
-        User actor = actorOpt.get();
 
-        String actorStudentId = actor.getStudentId();
-        String actorEmail = actor.getEmail();
-
-        boolean okById = actorId != null && actorId.equals(req.getProviderId());
-        boolean okByStudent = actorStudentId != null && actorStudentId.equals(req.getProviderId());
-        boolean okByEmail = actorEmail != null && actorEmail.equals(req.getProviderId());
-
-        if (!(okById || okByStudent || okByEmail)) {
-            throw new RuntimeException("Only the provider can change request status.");
-        }
-
-        SkillRequest.RequestStatus newStatus;
-        try {
-            newStatus = SkillRequest.RequestStatus.valueOf(status.toUpperCase());
-        } catch (IllegalArgumentException ex) {
-            throw new RuntimeException("Invalid status: " + status);
+        // STATE TRANSITION VALIDATION
+        if (newStatus == SkillRequest.RequestStatus.COMPLETED) {
+             // Can only complete if ACCEPTED
+             if (req.getStatus() != SkillRequest.RequestStatus.ACCEPTED) {
+                  throw new RuntimeException("Cannot complete a session that is " + req.getStatus());
+             }
+        } else {
+             // For ACCEPT/REJECT, must be PENDING
+             if (req.getStatus() != SkillRequest.RequestStatus.PENDING) {
+                 throw new RuntimeException("Request has already been processed as " + req.getStatus());
+             }
         }
 
         req.setStatus(newStatus);
         req.setUpdatedAt(LocalDateTime.now());
         SkillRequest updated = skillRequestRepository.save(req);
 
+        // ======================================================
+        // 🔔 SEEKER NOTIFICATION (ACCEPT / REJECT)
+        // ======================================================
+        User provider = userRepository.findById(req.getProviderId()).orElse(null);
+
         Map<String, String> meta = new HashMap<>();
         meta.put("requestId", req.getId());
-        meta.put("providerId", req.getProviderId());
         meta.put("skillName", req.getSkillName());
+        meta.put("status", newStatus.name());
+
+        meta.put("providerStudentId",
+                provider != null && provider.getStudentId() != null
+                        ? provider.getStudentId()
+                        : "");
+
+        meta.put("providerName",
+                provider != null && provider.getFullName() != null
+                        ? provider.getFullName()
+                        : "");
 
         NotificationType notifType;
         String title;
         String message;
 
-        System.out.println("🎯 [DEBUG] New status: " + newStatus);
-
         switch (newStatus) {
             case ACCEPTED:
-                System.out.println("🔥 ACCEPTED CASE ENTERED");
-
                 notifType = NotificationType.REQUEST_ACCEPTED;
                 title = "Request Accepted";
                 message = "Your request for '" + req.getSkillName() + "' was accepted.";
 
                 try {
-                    // ✅ Directly create session board via service
-                    CreateSessionBoardDTO createDTO = new CreateSessionBoardDTO();
-                    createDTO.setSessionId(req.getId());
-                    createDTO.setLearnerId(req.getSeekerId());
-                    createDTO.setTeacherId(req.getProviderId());
-
-                    SessionBoardDTO sessionBoard = sessionBoardService.createSessionBoard(createDTO);
-
-                    if (req.getSkillName() != null && !req.getSkillName().isEmpty()) {
-                        sessionBoardService.updateProgressNotes(
-                                sessionBoard.getId(),
-                                "Learning session for: " + req.getSkillName()
-                        );
-                    }
-
-                    System.out.println("✅ Session board created for request: " + req.getId());
-
+                    CreateSessionBoardDTO dto = new CreateSessionBoardDTO();
+                    dto.setSessionId(req.getId());
+                    dto.setLearnerId(req.getSeekerId());
+                    dto.setTeacherId(req.getProviderId());
+                    sessionBoardService.createSessionBoard(dto);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -164,8 +208,8 @@ public class SkillRequestServiceImpl implements RequestService {
 
             case COMPLETED:
                 notifType = NotificationType.SESSION_UPDATE;
-                title = "Request Completed";
-                message = "Your session for '" + req.getSkillName() + "' has been marked completed.";
+                title = "Session Completed";
+                message = "Your session for '" + req.getSkillName() + "' is completed.";
                 break;
 
             default:
@@ -185,7 +229,6 @@ public class SkillRequestServiceImpl implements RequestService {
                 .build();
 
         notificationService.createNotification(notify);
-
         return updated;
     }
 
@@ -194,18 +237,17 @@ public class SkillRequestServiceImpl implements RequestService {
         return skillRequestRepository.findById(requestId);
     }
 
+    // ======================================================
+    // RESOLVE PROVIDER ID
+    // ======================================================
     private String resolveProviderId(String providerIdentifier) {
-        if (providerIdentifier == null) return null;
+        if (providerIdentifier == null)
+            return null;
 
-        Optional<User> byId = userRepository.findById(providerIdentifier);
-        if (byId.isPresent()) return byId.get().getId();
-
-        Optional<User> byStudentOpt = userRepository.findByStudentId(providerIdentifier);
-        if (byStudentOpt.isPresent()) return byStudentOpt.get().getId();
-
-        Optional<User> byEmailOpt = userRepository.findByEmail(providerIdentifier);
-        if (byEmailOpt.isPresent()) return byEmailOpt.get().getId();
-
-        return null;
+        return userRepository.findById(providerIdentifier)
+                .or(() -> userRepository.findByStudentId(providerIdentifier))
+                .or(() -> userRepository.findByEmail(providerIdentifier))
+                .map(User::getId)
+                .orElse(null);
     }
 }

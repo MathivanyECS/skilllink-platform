@@ -10,4 +10,5 @@ import java.util.List;
 public interface CollaborationPostRepository extends MongoRepository<CollaborationPost, String> {
     List<CollaborationPost> findByStatusOrderByCreatedAtDesc(String status);
     List<CollaborationPost> findByCreatedByOrderByCreatedAtDesc(String createdBy);
+    List<CollaborationPost> findAllByOrderByCreatedAtDesc();
 }

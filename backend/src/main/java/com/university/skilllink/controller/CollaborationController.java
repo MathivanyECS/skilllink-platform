@@ -31,8 +31,8 @@ public class CollaborationController {
     }
 
     @GetMapping
-    public ResponseEntity<List<CollaborationPost>> listOpen() {
-        return ResponseEntity.ok(collaborationService.listAllOpenPosts());
+    public ResponseEntity<List<CollaborationPost>> listPosts() {
+        return ResponseEntity.ok(collaborationService.listAllPosts());
     }
 
     @GetMapping("/{postId}")
@@ -53,6 +53,12 @@ public class CollaborationController {
     public ResponseEntity<List<CollaborationApplication>> getApplications(@PathVariable String postId, Authentication auth) {
         String userId = userService.getUserByEmail(auth.getName()).getId();
         return ResponseEntity.ok(collaborationService.listApplications(postId, userId));
+    }
+
+    @GetMapping("/my-applications")
+    public ResponseEntity<List<CollaborationApplication>> getMyApplications(Authentication auth) {
+        String userId = userService.getUserByEmail(auth.getName()).getId();
+        return ResponseEntity.ok(collaborationService.getMyApplications(userId));
     }
 
     @PutMapping("/{postId}/applications/{applicationId}")

@@ -18,6 +18,10 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+/**
+ * Implementation of SessionBoardService.
+ * Manages session boards, including creation and meeting updates.
+ */
 public class SessionBoardServiceImpl implements SessionBoardService {
      
     /**
@@ -97,6 +101,14 @@ public class SessionBoardServiceImpl implements SessionBoardService {
         
         SessionBoard updated = sessionBoardRepository.save(sessionBoard);
         return convertToDTO(updated);
+    }
+    
+    @Override
+    public void deleteSessionBoard(String id) {
+        if (!sessionBoardRepository.existsById(id)) {
+            throw new RuntimeException("Session board not found");
+        }
+        sessionBoardRepository.deleteById(id);
     }
     
     private SessionBoardDTO convertToDTO(SessionBoard sessionBoard) {

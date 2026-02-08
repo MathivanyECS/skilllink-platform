@@ -34,9 +34,8 @@ public class AuthServiceImpl implements AuthService {
         }
 
         // Assign role from request, default to STUDENT
-        User.UserRole role = request.getRole() != null ?
-                User.UserRole.valueOf(request.getRole().toUpperCase()) :
-                User.UserRole.STUDENT;
+        User.UserRole role = request.getRole() != null ? User.UserRole.valueOf(request.getRole().toUpperCase())
+                : User.UserRole.STUDENT;
 
         User user = User.builder()
                 .fullName(request.getFullName())
@@ -50,13 +49,16 @@ public class AuthServiceImpl implements AuthService {
 
         User savedUser = userRepository.save(user);
 
+        java.util.Map<String, Object> claims = new java.util.HashMap<>();
+        claims.put("userId", savedUser.getId());
+
         String token = jwtUtil.generateToken(
+                claims,
                 org.springframework.security.core.userdetails.User.builder()
                         .username(savedUser.getEmail())
                         .password(savedUser.getPassword())
                         .authorities("ROLE_" + savedUser.getRole().name())
-                        .build()
-        );
+                        .build());
 
         return new AuthResponse(token, UserDTO.fromUser(savedUser));
     }
@@ -65,8 +67,9 @@ public class AuthServiceImpl implements AuthService {
     public AuthResponse login(LoginRequest request) {
         try {
             authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
-            );
+                    new UsernamePasswordAuthenticationToken(
+                            request.getEmail(),
+                            request.getPassword()));
         } catch (Exception e) {
             throw new InvalidCredentialsException("Invalid email or password");
         }
@@ -78,13 +81,16 @@ public class AuthServiceImpl implements AuthService {
             throw new AccountDeactivatedException("Your account has been deactivated. Please contact support.");
         }
 
+        java.util.Map<String, Object> claims = new java.util.HashMap<>();
+        claims.put("userId", user.getId());
+
         String token = jwtUtil.generateToken(
+                claims,
                 org.springframework.security.core.userdetails.User.builder()
                         .username(user.getEmail())
                         .password(user.getPassword())
                         .authorities("ROLE_" + user.getRole().name())
-                        .build()
-        );
+                        .build());
 
         return new AuthResponse(token, UserDTO.fromUser(user));
     }
