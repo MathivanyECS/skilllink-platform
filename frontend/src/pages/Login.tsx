@@ -109,6 +109,15 @@ const Login = () => {
             >
               Sign In
             </button>
+            <p className="text-sm text-right mt-2">
+              <a
+                href="/forgot-password"
+                className="text-green-400 hover:underline"
+              >
+                Forgot password?
+              </a>
+            </p>
+
           </form>
 
           {/* ================= OR DIVIDER ================= */}
