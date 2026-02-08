@@ -55,6 +55,12 @@ public class CollaborationController {
         return ResponseEntity.ok(collaborationService.listApplications(postId, userId));
     }
 
+    @GetMapping("/my-applications")
+    public ResponseEntity<List<CollaborationApplication>> getMyApplications(Authentication auth) {
+        String userId = userService.getUserByEmail(auth.getName()).getId();
+        return ResponseEntity.ok(collaborationService.getMyApplications(userId));
+    }
+
     @PutMapping("/{postId}/applications/{applicationId}")
     public ResponseEntity<CollaborationApplication> respond(@PathVariable String postId,
                                                             @PathVariable String applicationId,

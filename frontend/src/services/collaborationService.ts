@@ -41,3 +41,8 @@ export const closePost = async (postId: string): Promise<CollaborationPost> => {
 export const deletePost = async (postId: string): Promise<void> => {
     await api.delete(`/collaborations/${postId}`);
 };
+
+export const getMyApplications = async (): Promise<CollaborationApplication[]> => {
+    const response = await api.get<CollaborationApplication[]>("/collaborations/my-applications");
+    return response.data;
+};

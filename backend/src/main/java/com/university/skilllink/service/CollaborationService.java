@@ -23,6 +23,8 @@ public interface CollaborationService {
 
     List<CollaborationApplication> listApplications(String postId, String userId);
 
+    List<CollaborationApplication> getMyApplications(String userId);
+
     CollaborationApplication respondToApplication(String postId, String applicationId, String userId, boolean accept);
 
     CollaborationPost closePost(String postId, String userId);

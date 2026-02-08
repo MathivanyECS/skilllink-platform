@@ -30,7 +30,7 @@ const ApplyModal = ({ open, onClose, postId, postTitle, onSuccess }: ApplyModalP
         const email = contactInfo.trim();
 
         // ✅ Validation 1: Empty fields
-        if (!msg || !email) {
+        if (!msg) {
             toast.error("Please fill in all fields");
             return;
         }
@@ -41,11 +41,6 @@ const ApplyModal = ({ open, onClose, postId, postTitle, onSuccess }: ApplyModalP
             return;
         }
 
-        // ✅ Validation 3: Email format
-        if (!isValidEmail(email)) {
-            toast.error("Please enter a valid email address");
-            return;
-        }
 
         setLoading(true);
         try {

@@ -8,6 +8,8 @@ import CollaborationPostModal from "./CollaborationPostModal";
 import ApplicationsModal from "./ApplicationsModal";
 import PostDetailModal from "./PostDetailModal";
 import { jwtDecode } from "jwt-decode";
+import { getMyApplications } from "../../services/collaborationService";
+import { CollaborationApplication } from "../../types/collaboration.types";
 
 const CollaborationFeed = () => {
     const { posts, loading, error, refetch } = useCollaborationPosts();
@@ -16,6 +18,7 @@ const CollaborationFeed = () => {
     const [filter, setFilter] = useState("ALL"); // ALL, MY_POSTS
     const [viewApplicationsPostId, setViewApplicationsPostId] = useState<string | null>(null);
     const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
+    const [myApplications, setMyApplications] = useState<Record<string, string>>({}); // postId -> status
 
     const auth = useAuth();
     let currentUserId: string | null = null;
@@ -46,6 +49,26 @@ const CollaborationFeed = () => {
         }
     }, [posts, currentUserId]);
 
+    // Fetch my applications to know the status
+    useEffect(() => {
+        const fetchMyApps = async () => {
+            if (!currentUserId) return;
+            try {
+                const apps = await getMyApplications();
+                const statusMap: Record<string, string> = {};
+                apps.forEach(app => {
+                    statusMap[app.postId] = app.status;
+                });
+                setMyApplications(statusMap);
+            } catch (error) {
+                console.error("Failed to fetch my applications", error);
+            }
+        };
+        fetchMyApps();
+    }, [currentUserId]);
+
+    // Filter posts locally
+
     // Filter posts locally
     const filteredPosts = posts.filter((post: CollaborationPost) => {
         const matchesSearch = post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -65,8 +88,8 @@ const CollaborationFeed = () => {
             <div style={container}>
                 {/* Hero / Header Section */}
                 <div style={heroSection}>
-                    <h1 style={title}>Find Your Next <span style={{ color: "#38AE56" }}>Project Partner</span></h1>
-                    <p style={subtitle}>Collaborate on exciting projects, build your portfolio, and learn from others.</p>
+                    <h1 style={title}>Collaborate Beyond <span style={{ color: "#38AE56" }}>Individual Skills</span></h1>
+                    <p style={subtitle}>Connect with peers to work on projects, competitions, and academic events.</p>
 
                     <div style={controls}>
                         <div style={searchWrapper}>
@@ -125,6 +148,7 @@ const CollaborationFeed = () => {
                                     onUpdate={refetch}
                                     onOpen={() => setSelectedPostId(post.id)}
                                     currentUserId={currentUserId}
+                                    applicationStatus={myApplications[post.id]}
                                 />
                             );
                         })}

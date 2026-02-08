@@ -11,9 +11,10 @@ interface PostCardProps {
     onUpdate?: () => void;
     onOpen?: () => void;
     currentUserId?: string | null;
+    applicationStatus?: string;
 }
 
-const PostCard = ({ post, isOwner, onViewApplications, onUpdate, onOpen, currentUserId }: PostCardProps) => {
+const PostCard = ({ post, isOwner, onViewApplications, onUpdate, onOpen, currentUserId, applicationStatus }: PostCardProps) => {
     const navigate = useNavigate();
 
     const getStatusColor = (status: string) => {
@@ -54,6 +55,20 @@ const PostCard = ({ post, isOwner, onViewApplications, onUpdate, onOpen, current
     };
 
     const isApplied = currentUserId && post.applicants?.includes(currentUserId);
+    const status = applicationStatus || "PENDING"; // Default to pending if applied but status unknown
+
+    // Determine button style based on status
+    const getStatusButtonStyle = () => {
+        if (status === "ACCEPTED") return { background: "#38AE56", color: "white", borderColor: "#38AE56" };
+        if (status === "REJECTED") return { background: "#e74c3c", color: "white", borderColor: "#e74c3c" };
+        return { background: "rgba(56, 174, 86, 0.2)", color: "#38AE56", borderColor: "#38AE56" }; // PENDING
+    };
+
+    const getStatusText = () => {
+        if (status === "ACCEPTED") return "ACCEPTED";
+        if (status === "REJECTED") return "REJECTED";
+        return "APPLIED";
+    };
 
     return (
         <div style={cardStyle} onClick={handleOpen}>
@@ -109,12 +124,10 @@ const PostCard = ({ post, isOwner, onViewApplications, onUpdate, onOpen, current
                     isApplied ? (
                         <button style={{
                             ...actionBtn,
-                            background: "#38AE56",
-                            color: "white",
-                            borderColor: "#38AE56",
-                            cursor: "default"
+                            cursor: "default",
+                            ...getStatusButtonStyle()
                         }} onClick={(e) => e.stopPropagation()}>
-                            APPLIED
+                            {getStatusText()}
                         </button>
                     ) : (
                         <button style={{

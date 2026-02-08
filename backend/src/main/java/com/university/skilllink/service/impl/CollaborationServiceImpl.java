@@ -154,6 +154,11 @@ public class CollaborationServiceImpl implements CollaborationService {
     }
 
     @Override
+    public List<CollaborationApplication> getMyApplications(String userId) {
+        return appRepo.findByApplicantId(userId);
+    }
+
+    @Override
     public CollaborationApplication respondToApplication(String postId, String applicationId, String userId, boolean accept) {
         CollaborationPost post = getPostById(postId);
         if (!post.getCreatedBy().equals(userId))
