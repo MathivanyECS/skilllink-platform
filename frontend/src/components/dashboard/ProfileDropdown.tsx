@@ -45,8 +45,9 @@ const ProfileDropdown = ({ onClose }: Props) => {
 
   const handleLogout = () => {
     localStorage.removeItem("token");
-    navigate("/login");
+    navigate("/", { replace: true });
   };
+
 
   return (
 
