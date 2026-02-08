@@ -11,7 +11,7 @@ public interface CollaborationService {
 
     CollaborationPost createPost(String creatorUserId, CollabPostDTO dto);
 
-    List<CollaborationPost> listAllOpenPosts();
+    List<CollaborationPost> listAllPosts();
 
     CollaborationPost getPostById(String postId);
 

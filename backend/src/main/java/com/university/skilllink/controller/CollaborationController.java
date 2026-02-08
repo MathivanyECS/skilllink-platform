@@ -31,8 +31,8 @@ public class CollaborationController {
     }
 
     @GetMapping
-    public ResponseEntity<List<CollaborationPost>> listOpen() {
-        return ResponseEntity.ok(collaborationService.listAllOpenPosts());
+    public ResponseEntity<List<CollaborationPost>> listPosts() {
+        return ResponseEntity.ok(collaborationService.listAllPosts());
     }
 
     @GetMapping("/{postId}")

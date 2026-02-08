@@ -60,8 +60,8 @@ public class CollaborationServiceImpl implements CollaborationService {
     }
 
     @Override
-    public List<CollaborationPost> listAllOpenPosts() {
-        return postRepo.findByStatusOrderByCreatedAtDesc("OPEN");
+    public List<CollaborationPost> listAllPosts() {
+        return postRepo.findAllByOrderByCreatedAtDesc();
     }
 
     @Override
@@ -116,10 +116,17 @@ public class CollaborationServiceImpl implements CollaborationService {
         if (alreadyApplied)
             throw new ForbiddenException("You already applied to this post");
 
+        UserDTO applicant = userService.getUserById(applicantUserId);
+        String applicantName = applicant != null ? applicant.getFullName() : "Unknown";
+        String applicantEmail = applicant != null ? applicant.getEmail() : "";
+
         CollaborationApplication app = CollaborationApplication.builder()
                 .postId(postId)
                 .applicantId(applicantUserId)
                 .message(dto.getMessage())
+                .contactInfo(dto.getContactInfo())
+                .applicantName(applicantName)
+                .applicantEmail(applicantEmail)
                 .status(CollaborationApplication.ApplicationStatus.PENDING)
                 .appliedAt(LocalDateTime.now())
                 .build();
@@ -127,9 +134,6 @@ public class CollaborationServiceImpl implements CollaborationService {
         CollaborationApplication savedApp = appRepo.save(app);
         post.getApplicants().add(applicantUserId);
         postRepo.save(post);
-
-        UserDTO applicant = userService.getUserById(applicantUserId);
-        String applicantName = applicant != null ? applicant.getFullName() : "Someone";
 
         notificationService.send(
                 post.getCreatedBy(),
