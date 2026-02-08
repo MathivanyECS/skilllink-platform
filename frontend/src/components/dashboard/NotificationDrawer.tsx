@@ -26,7 +26,7 @@ const NotificationDrawer = ({ open, onClose, onUnreadCount }: Props) => {
   useEffect(() => {
     if (open) load();
 
-    // 🔥 REAL-TIME WEBSOCKET CONNECTION
+    //  REAL-TIME WEBSOCKET CONNECTION
     import("sockjs-client").then(({ default: SockJS }) => {
       import("@stomp/stompjs").then(({ Stomp }) => {
         const socket = new SockJS("http://localhost:8080/ws");
@@ -87,10 +87,10 @@ const NotificationDrawer = ({ open, onClose, onUnreadCount }: Props) => {
             key={n.id}
             data={n}
             onClick={() => {
-              // ✅ OPEN MODAL (DO NOT REMOVE HERE)
+              // ✅ OPEN MODAL 
               if (
                 n.type === "NEW_REQUEST" ||
-                n.type === "REQUEST_SENT" || // ✅ IMPORTANT
+                n.type === "REQUEST_SENT" || 
                 n.type === "REQUEST_ACCEPTED" ||
                 n.type === "REQUEST_REJECTED" ||
                 n.type === "WISHLIST_CREATED" ||
