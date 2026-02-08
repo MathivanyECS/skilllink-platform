@@ -39,7 +39,14 @@ const NotificationDetailModal = ({
 
   if (!open || !notification) return null;
 
-  const meta = notification.metadata || {};
+  const meta = notification?.metadata || {};
+
+  const wishlistSkillName =
+    meta.skillName ||
+    meta.wishlistSkill ||
+    meta.skill ||
+    "Your wishlist skill";
+
 
   const handleAccept = async () => {
     try {
@@ -169,34 +176,35 @@ const NotificationDetailModal = ({
         {/* ================= ACCEPT / REJECT (SEEKER) ================= */}
         {(notification.type === "REQUEST_ACCEPTED" ||
           notification.type === "REQUEST_REJECTED") && (
-          <>
-            <h2 style={statusTitle}>Request Status Update</h2>
+            <>
+              <h2 style={statusTitle}>Request Status Update</h2>
 
-            <p style={statusSkill}>{meta.skillName || "-"}</p>
+              <p style={statusSkill}>{meta.skillName || "-"}</p>
 
-            <p
-              style={{
-                ...statusValue,
-                color: meta.status === "ACCEPTED" ? "#38AE56" : "#e74c3c"
-              }}
-            >
-              {meta.status}
-            </p>
+              <p
+                style={{
+                  ...statusValue,
+                  color: meta.status === "ACCEPTED" ? "#38AE56" : "#e74c3c"
+                }}
+              >
+                {meta.status}
+              </p>
 
-            <div style={centerBtnRow}>
-              <button style={cancelBtn} onClick={closeAndRead}>
-                OK
-              </button>
-            </div>
-          </>
-        )}
-
+              <div style={centerBtnRow}>
+                <button style={cancelBtn} onClick={closeAndRead}>
+                  OK
+                </button>
+              </div>
+            </>
+          )}
         {/* ================= WISHLIST ================= */}
+
         {notification.type === "WISHLIST_CREATED" && (
           <>
             <h1 style={wishlistTitle}>Wishlist Added</h1>
             <p style={wishlistSub}>Skill</p>
-            <p style={wishlistSkill}>{meta.skillName || "-"}</p>
+            <p style={wishlistSkill}>{wishlistSkillName}</p>
+
             <div style={wishlistBtnRow}>
               <button style={wishlistOkBtn} onClick={closeAndRead}>
                 OK
@@ -205,10 +213,42 @@ const NotificationDetailModal = ({
           </>
         )}
 
-      </div>
-    </div>
+
+
+        {/* ================= WISHLIST MATCH FOUND ================= */}
+        {
+          notification.type === "WISHLIST_AVAILABLE" && (
+            <>
+              <h1 style={wishlistTitle}>Wishlist Added</h1>
+              <p style={wishlistSub}>Skill</p>
+              <p style={wishlistSkill}>{meta.skillName || "Your wishlist skill"}</p>
+
+              <p
+                style={{
+                  textAlign: "center",
+                  marginTop: 12,
+                  fontSize: 15,
+                  opacity: 0.8
+                }}
+              >
+                A provider is now available for a skill in your wishlist.
+              </p>
+              <div style={wishlistBtnRow}>
+
+                <button style={wishlistOkBtn} onClick={closeAndRead}>
+                  OK
+                </button>
+              </div>
+            </>
+          )
+        }
+
+      </div >
+    </div >
   );
 };
+
+
 
 /* ================= STYLES ================= */
 
@@ -389,11 +429,11 @@ const wishlistOkBtn = {
 /* ===== Animation ===== */
 const style = document.createElement("style");
 style.innerHTML = `
-@keyframes popup {
-  from { opacity: 0; transform: scale(0.9); }
-  to { opacity: 1; transform: scale(1); }
+      @keyframes popup {
+        from {opacity: 0; transform: scale(0.9); }
+      to {opacity: 1; transform: scale(1); }
 }
-`;
+      `;
 document.head.appendChild(style);
 
 export default NotificationDetailModal;

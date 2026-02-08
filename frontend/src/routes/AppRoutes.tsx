@@ -25,6 +25,9 @@ import SystemHealthPage from "../pages/admin/SystemHealthPage";
 
 /* ===== ROUTE GUARD ===== */
 import ProtectedRoute from "./ProtectedRoute";
+import ForgotPassword from "../pages/ForgotPassword";
+import PasswordReset from "../components/auth/PasswordReset";
+
 
 const AppRoutes = () => (
   <Routes>
@@ -32,6 +35,9 @@ const AppRoutes = () => (
     <Route path="/" element={<GetStarted />} />
     <Route path="/login" element={<Login />} />
     <Route path="/register" element={<Register />} />
+    <Route path="/forgot-password" element={<ForgotPassword />} />
+    <Route path="/reset-password" element={<PasswordReset />} />
+
 
     {/* 🔐 USER PROTECTED ROUTES */}
     <Route element={<ProtectedRoute />}>
