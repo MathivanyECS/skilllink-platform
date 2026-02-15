@@ -45,17 +45,17 @@ export type CollabPostDTO = {
 
 export type TopSkillProviderDTO = {
   userId: string;
-  email?: string;
-  username?: string;
+  fullName: string;
+  email: string;
   skillName: string;
-  count?: number;
+  demandCount: number;
 };
 
 export type SkillGapReportDTO = {
   skillName: string;
   demandCount: number;
   providerCount: number;
-  gap: number; // demand - provider
+  gapScore: number;
 };
 
 export type CollabStatsDTO = {

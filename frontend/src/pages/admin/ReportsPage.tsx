@@ -95,13 +95,13 @@ const ReportsPage = () => {
                   header: "User",
                   render: (r) => (
                     <div className="space-y-1">
-                      <div className="font-semibold">{r.username || "User"}</div>
+                      <div className="font-semibold">{r.fullName || "User"}</div>
                       <div className="text-xs text-gray-400">{r.email || r.userId}</div>
                     </div>
                   ),
                 },
                 { header: "Skill", render: (r) => <span className="text-gray-200">{r.skillName}</span> },
-                { header: "Count", className: "text-right", render: (r) => <span className="text-gray-200">{r.count ?? "-"}</span> },
+                { header: "Count", className: "text-right", render: (r) => <span className="text-gray-200">{r.demandCount ?? "-"}</span> },
               ]}
             />
           )}
@@ -125,7 +125,7 @@ const ReportsPage = () => {
                 { header: "Skill", render: (r) => <span className="font-semibold">{r.skillName}</span> },
                 { header: "Demand", className: "text-right", render: (r) => <span>{r.demandCount}</span> },
                 { header: "Providers", className: "text-right", render: (r) => <span>{r.providerCount}</span> },
-                { header: "Gap", className: "text-right", render: (r) => <span>{r.gap}</span> },
+                { header: "Gap", className: "text-right", render: (r) => <span>{r.gapScore}</span> },
               ]}
             />
           )}
